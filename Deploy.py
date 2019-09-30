@@ -7,7 +7,7 @@ sys.dont_write_bytecode = True
 
 from src.Deployment.ARM_Deployer import ARM_Deployer
 from src.Deployment.Blob_Deployer import Blob_Deployer
-from src.Common.Functions import load_json
+from src.Common.Functions import load_json, write_json
 
 ################################################################################################
 # Fill in values for customization & use in Deployment 
@@ -19,6 +19,11 @@ subscription_id: str = '' if len(sys.argv) < 2 else sys.argv[1]
 # Deploy Azure Resources
 ################################################################################################
 current_dir = os.getcwd()
+
+# Load Config file to check if the deployment has already been ran.
+config_file = 'config.json'
+config = load_json(config_file)
+deployed = config['deployed']
 
 # Get Default Param Path for Storage Account Name & Location
 default_param_path: str = os.path.join(current_dir, 'Templates', 'default.params.json')
@@ -38,7 +43,11 @@ credentials = InteractiveLoginAuthentication(force=False, tenant_id=None)
 arm_deployer = ARM_Deployer(credentials= credentials, subscription_id = subscription_id,
                               resource_group= resource_group, template_dir= template_dir,
                               location=location)
-arm_deployer.deploy_all()
+if not deployed:
+    arm_deployer.deploy_all()
+    config['deployed'] = True
+    write_json(config_file, data=config)
+    
 
 ################################################################################################
 # Deploy Blob Files & Containers corresponding to JSON to Storage Account

@@ -12,3 +12,7 @@ def psw_generator():
 def load_json(file: str):
     with open(file, 'r') as json_file:
         return json.load(json_file)
+
+def write_json(file: str, data: dict):
+    with open(file, 'w+') as json_file:
+        json.dump(data, json_file)
