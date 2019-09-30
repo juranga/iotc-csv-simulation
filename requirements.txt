@@ -1,3 +1,10 @@
-azureml-core
-azure-mgmt
-azure-storage-blob
+azureml-core==1.0.62
+azure-mgmt-authorization==0.60.0
+azure-mgmt-containerregistry==2.8.0
+azure-mgmt-keyvault==2.0.0
+azure-mgmt-resource==5.0.0
+azure-mgmt-storage==4.0.0
+docker==4.0.2
+adal==1.2.2
+azure-storage-blob==2.1.0
+azure-storage-common==2.1.0

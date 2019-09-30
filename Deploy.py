@@ -13,7 +13,7 @@ from src.Common.Functions import load_json
 # Fill in values for customization & use in Deployment 
 ################################################################################################
 # Subscription is obtained from azure portal. Ask management if you do not know which to use.
-subscription_id: str = ''
+subscription_id: str = '' if len(sys.argv) < 2 else sys.argv[1]
 
 ################################################################################################
 # Deploy Azure Resources
@@ -48,7 +48,7 @@ arm_deployer.deploy_all()
 storage_account: str = default_params['storageAccountName']['value']
 
 csv_folder: str = os.path.join(current_dir, 'Data', 'DeviceDataCSVs')
-device_definitions_folder: str = os.path.join(current_dir, 'Data', 'DeviceTypes')
+device_types_folder: str = os.path.join(current_dir, 'Data', 'DeviceTypes')
 
 # Obtain Storage Account credentials
 storage_client = StorageManagementClient(credentials, subscription_id)
@@ -56,6 +56,6 @@ storage_keys = storage_client.storage_accounts.list_keys(resource_group, storage
 storage_keys: dict = {v.key_name: v.value for v in storage_keys.keys}
 
 # Upload Device Data files in to 3 separate containers in Blob Storage
-blob_deployer = Blob_Deployer(name=storage_account, key=storage_keys['key1'])
+blob_deployer = Blob_Deployer(storage_account, storage_keys['key1'])
 blob_deployer.upload_blobs_from_folder(folder=csv_folder, container_name='csvfiles')
-blob_deployer.upload_blobs_from_folder(folder=data_definitions_folder, container_name='devicedefinitionfiles')
+blob_deployer.upload_blobs_from_folder(folder=device_types_folder, container_name='devicedefinitionfiles')

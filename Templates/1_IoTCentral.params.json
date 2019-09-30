@@ -1,9 +1,9 @@
 {
   "resourceName": {
-    "value": "customsimio"
+    "value": "customsimiotc"
   },
   "subdomain": {
-    "value": "customsimio"
+    "value": "customsimiotc"
   },
   "sku": {
     "value": "S1"

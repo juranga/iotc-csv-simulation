@@ -1,0 +1,6 @@
+IOTC_DeviceID,DeviceType,SimulatedDataSource
+device1,SolarGenerationSystem,SampleCSVData.csv
+device2,WindGenerationSystem,SampleCSVData.csv
+device3,Refrigerator,SampleCSVData.csv
+device4,Battery,SampleCSVData.csv
+device5,Temperature,SampleCSVData.csv
