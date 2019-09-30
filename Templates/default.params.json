@@ -1,0 +1,20 @@
+{
+    "keyVaultName": {
+      "value": "customsimkv"
+    },
+    "accountName": {
+      "value": "customsimsa"
+    },
+    "storageAccountName": {
+      "value": "customsimsa"
+    },
+    "appServiceName": {
+      "value": "customsimazfn"
+    },
+    "appServicePlanName": {
+      "value": "customsimasp"
+    },
+    "location": {
+      "value": "centralus"
+    }
+}

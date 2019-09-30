@@ -1,0 +1,4 @@
+DeviceType,SimulatedDataSource
+SolarGenerationSystem,RepeatingDailyPVPowerGenerationCsv.csv
+SmartMeter,RepeatingDailySmartMeterPowerConsumptionCsv.csv
+WindGenerationSystem,RepeatingDailySmartMeterPowerConsumptionCsv.csv

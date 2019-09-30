@@ -1,0 +1,37 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+      "resourceName": {
+          "type": "string"
+      },
+      "subdomain": {
+          "type": "string"
+      },
+      "location": {
+          "type": "string"
+      },
+      "sku": {
+          "type": "string"
+      },
+      "template": {
+          "type": "string"
+      }
+  },
+  "resources": [
+      {
+          "type": "Microsoft.IoTCentral/IoTApps",
+          "name": "[parameters('resourceName')]",
+          "location": "[parameters('location')]",
+          "apiVersion": "2018-09-01",
+          "sku": {
+              "name": "[parameters('sku')]"
+          },
+          "properties": {
+              "displayName": "[parameters('resourceName')]",
+              "subdomain": "[parameters('subdomain')]",
+              "template": "[parameters('template')]"
+          }
+      }
+  ]
+}

@@ -1,0 +1,3 @@
+azureml-core
+azure-mgmt
+azure-storage-blob

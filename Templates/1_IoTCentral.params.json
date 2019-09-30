@@ -1,0 +1,17 @@
+{
+  "resourceName": {
+    "value": "customsimio"
+  },
+  "subdomain": {
+    "value": "customsimio"
+  },
+  "sku": {
+    "value": "S1"
+  },
+  "location": {
+    "value": "centralus"
+  },
+  "template": {
+    "value": "iotc-pnp-preview@1.0.0"
+  }
+}
