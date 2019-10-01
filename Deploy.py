@@ -1,3 +1,7 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
 from azureml.core.authentication import InteractiveLoginAuthentication, fetch_tenantid_from_aad_token
 from azure.mgmt.storage import StorageManagementClient
 import os, sys
@@ -7,6 +11,7 @@ sys.dont_write_bytecode = True
 
 from src.Deployment.ARM_Deployer import ARM_Deployer
 from src.Deployment.Blob_Deployer import Blob_Deployer
+from src.Deployment.Table_Deployer import Table_Deployer
 from src.Common.Functions import load_json, write_json
 
 ################################################################################################
@@ -50,7 +55,7 @@ if not deployed:
     
 
 ################################################################################################
-# Deploy Blob Files & Containers corresponding to JSON to Storage Account
+# Deploy Blob CSV Files & Containers to Storage Account
 ################################################################################################
 
 # Get Data Path Files & Storage Account Name
@@ -68,3 +73,18 @@ storage_keys: dict = {v.key_name: v.value for v in storage_keys.keys}
 blob_deployer = Blob_Deployer(storage_account, storage_keys['key1'])
 blob_deployer.upload_blobs_from_folder(folder=csv_folder, container_name='csvfiles')
 blob_deployer.upload_blobs_from_folder(folder=device_types_folder, container_name='devicedefinitionfiles')
+
+################################################################################################
+# Deploy Look Up Device Table to Storage Account
+# This is done to keep track of what row # in the csv simulated data the device should send as 
+# telemetry
+################################################################################################
+
+device_types_path = os.path.join(device_types_folder, 'DeviceTypes.csv')
+table_deployer = Table_Deployer(storage_account, storage_keys['key1'], device_types_path)
+
+# Create Devices table 
+table_deployer.create_table(table_name='devices')
+
+# Deploy all Devices from DeviceType.csv
+table_deployer.create_device_entities()

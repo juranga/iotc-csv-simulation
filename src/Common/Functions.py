@@ -1,3 +1,7 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
 from azure.storage.blob import BlockBlobService
 from azureml.core.authentication import fetch_tenantid_from_aad_token
 import json
