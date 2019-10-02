@@ -16,7 +16,7 @@ class Table_Deployer(object):
         self.device_type_path = device_type_path
         
     def create_table(self, table_name: str = 'devices'):
-        self.table_name = table_name
+        self.table_name: str = table_name
         if self.client.exists(self.table_name):
             return
         self.client.create_table(self.table_name)

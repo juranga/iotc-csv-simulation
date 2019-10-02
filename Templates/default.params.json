@@ -1,10 +1,26 @@
 {
-    "keyVaultName": {
-      "value": "customsimkv"
+  "resourceGroupName": {
+    "value": "iotcustomsimulation"
+  },
+  "location": {
+    "value": "centralus"
+  },
+  "0": {
+    "deploymentName": "IoT Central",
+    "iotCentralDomain": {
+      "value": "customsimiotc"
     },
+    "exists": true
+  },
+  "1": {
+    "deploymentName": "Storage Account",
     "accountName": {
       "value": "customsimsa"
     },
+    "exists": true
+  },
+  "2" : {
+    "deploymentName": "App Service",
     "storageAccountName": {
       "value": "customsimsa"
     },
@@ -14,7 +30,6 @@
     "appServicePlanName": {
       "value": "customsimasp"
     },
-    "location": {
-      "value": "centralus"
-    }
+    "exists": true
+  }
 }
