@@ -9,7 +9,7 @@ import os, sys
 # Prevent local Pycache files from being stored 
 sys.dont_write_bytecode = True 
 
-from src.constants import CONFIG_PATH
+from src.constants import CONFIG_PATH, AUTH_TOKEN
 from src.Deployment.ARM_Deployer import ARM_Deployer
 from src.Deployment.Blob_Deployer import Blob_Deployer
 from src.Deployment.Table_Deployer import Table_Deployer
@@ -18,7 +18,8 @@ from src.Common.Functions import load_json, write_to_config
 ################################################################################################
 # Fill in values for customization & use in Deployment 
 ################################################################################################
-# Subscription is obtained from azure portal. Ask management if you do not know which to use.
+
+# Subscription is obtained from azure portal. Ask management if you do not know which id to use.
 subscription_id: str = '' if len(sys.argv) < 2 else sys.argv[1]
 
 ################################################################################################
@@ -41,6 +42,7 @@ template_dir: str = os.path.join(current_dir, 'Templates')
 
 # Authenticate for Azure Resource Deployment. Currently only supports Interactive Login
 credentials = InteractiveLoginAuthentication(force=False, tenant_id=None)
+AUTH_TOKEN = credentials._get_arm_token()
 
 # Create Deployer class & deploy Azure Resources defined in the Templates Directory
 arm_deployer = ARM_Deployer(credentials= credentials, subscription_id = subscription_id,

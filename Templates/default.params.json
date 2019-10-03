@@ -10,16 +10,16 @@
     "iotCentralDomain": {
       "value": "customsimiotc"
     },
-    "exists": true
+    "exists": false
   },
   "1": {
     "deploymentName": "Storage Account",
     "accountName": {
       "value": "customsimsa"
     },
-    "exists": true
+    "exists": false
   },
-  "2" : {
+  "2": {
     "deploymentName": "App Service",
     "storageAccountName": {
       "value": "customsimsa"
@@ -30,6 +30,6 @@
     "appServicePlanName": {
       "value": "customsimasp"
     },
-    "exists": true
+    "exists": false
   }
 }
