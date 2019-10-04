@@ -1,40 +1,67 @@
 {
-    "@id": "urn:fii2v6jku:modelDefinition:blbegsykzj",
-    "@type": "DeviceModelDefinition",
-    "displayName": "Power Device",
+    "@type": "ModelDefinition",
+    "displayName": "GridCarbonEmissions",
     "capabilityModel": {
-        "@id": "urn:smutpnptestiotc:PowerResource_95:1",
         "@type": "CapabilityModel",
+        "displayName": "GridCarbonEmissions",
+        "description": "Grid Carbon Emissions",
+        "comment": "",
         "implements": [
             {
                 "@id": "urn:azureiot:DeviceInformation:1",
                 "@type": "InterfaceInstance",
                 "displayName": "Interface",
-                "name": "PowerResource",
+                "name": "GridCarbonEmissions",
                 "schema": {
-                    "@id": "urn:smutpnptestiotc:PowerResource_4da:1",
+                    "@id": "urn:azureiot:GridCarbonEmissions:1",
                     "@type": "Interface",
-                    "displayName": "Interface",
+                    "displayName": "TelemetryInterface",
                     "contents": [
                         {
-                            "@id": "urn:smutpnptestiotc:PowerResource_4da:PowerAmountKW:1",
+                            "@id": "urn:azureiot:GridCarbonEmissions:MarginalCO2Intensity_gCO2kWh:1",
                             "@type": "Telemetry",
-                            "displayName": "PowerAmountKW",
-                            "name": "PowerAmountKW",
-                            "schema": "double"
+                            "displayName": "MarginalCO2Intensity_gCO2kWh",
+                            "name": "MarginalCO2Intensity_gCO2kWh",
+                            "schema": "double",
+                            "unit": "gCO2kWh",
+                            "displayUnit": "gCO2kWh"
                         },
                         {
-                            "@id": "urn:smutpnptestiotc:PowerResource_4da:GridBalancingAuthorityAbbreviation:1",
-                            "@type": "Property",
-                            "displayName": "GridBalancingAuthorityAbbreviation",
-                            "name": "GridBalancingAuthorityAbbreviation",
-                            "writable": true,
-                            "schema": "string"
+                            "@id": "urn:azureiot:GridCarbonEmissions:SystemWideCO2Intensity_gCO2kWh:1",
+                            "@type": "Telemetry",
+                            "displayName": "SystemWideCO2Intensity_gCO2kWh",
+                            "name": "SystemWideCO2Intensity_gCO2kWh",
+                            "schema": "double",
+                            "unit": "gCO2kWh",
+                            "displayUnit": "gCO2kWh"
                         }
                     ]
                 }
             }
-        ],
-        "displayName": "PowerResource"
+        ]
+    },
+    "solutionModel": {
+        "@type": "SolutionModel",
+        "displayName": "GridCarbonEmissions",
+        "description": "GridCarbonEmissions",
+        "comment": "",
+        "cloudProperties": [
+            {
+                "@id": "urn:azureiot:GridCarbonEmissions:AverageCO2Intensity_gCO2kWh:1",
+                "@type": "Property",
+                "displayName": "AverageCO2Intensity_gCO2kWh",
+                "name": "AverageCO2Intensity_gCO2kWh",
+                "writable": true,
+                "schema": "double"
+            },
+            {
+                "@id": "urn:azureiot:GridCarbonEmissions:GridBalancingAuthorityAbbreviation:1",
+                "@type": "Property",
+                "displayName": "GridBalancingAuthorityAbbreviation",
+                "name": "GridBalancingAuthorityAbbreviation",
+                "writable": true,
+                "schema": "string"
+            }
+        ]
     }
 }

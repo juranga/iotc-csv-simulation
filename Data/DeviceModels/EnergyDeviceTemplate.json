@@ -1,35 +1,98 @@
 {
-    "@id": "urn:iotcentral:EnergyResource:1",
-    "@type": "CapabilityModel",
-    "displayName": "Energy Device",
-    "implements": [
-        {
-            "@id": "urn:azureiot:DeviceInformation:1",
-            "@type": "InterfaceInstance",
-            "displayName": "Interface",
-            "name": "EnergyResource",
-            "schema": {
-                "@id": "urn:iotcentral:EnergyResource:1",
-                "@type": "Interface",
+    "@type": "ModelDefinition",
+    "displayName": "EnergyResource",
+    "capabilityModel": {
+        "@type": "CapabilityModel",
+        "displayName": "EnergyResource",
+        "description": "Resources that send energy telemetry",
+        "comment": "",
+        "implements": [
+            {
+                "@id": "urn:azureiot:DeviceInformation:1",
+                "@type": "InterfaceInstance",
                 "displayName": "Interface",
-                "contents": [
-                    {
-                        "@id": "urn:iotcentral:EnergyResource:PowerAmountKW:1",
-                        "@type": "Telemetry",
-                        "displayName": "EnergyAmountkWh",
-                        "name": "EnergyAmountkWh",
-                        "schema": "double"
-                    },
-                    {
-                        "@id": "urn:iotcentral:PowerResource_4da:GridBalancingAuthorityAbbreviation:1",
-                        "@type": "Property",
-                        "displayName": "GridBalancingAuthorityAbbreviation",
-                        "name": "GridBalancingAuthorityAbbreviation",
-                        "writable": true,
-                        "schema": "string"
-                    }
-                ]
+                "name": "EnergyResource",
+                "schema": {
+                    "@id": "urn:azureiot:EnergyResource:1",
+                    "@type": "Interface",
+                    "displayName": "TelemetryInterface",
+                    "contents": [
+                        {
+                            "@id": "urn:azureiot:EnergyResource:PowerAmountKW:1",
+                            "@type": "Telemetry",
+                            "displayName": "EnergyAmountkWh",
+                            "name": "EnergyAmountkWh",
+                            "schema": "double",
+                            "unit": "kWh",
+                            "displayUnit": "kWh"
+                        }
+                    ]
+                }
             }
-        }
-    ]
+        ]
+    },
+    "solutionModel": {
+        "@type": "SolutionModel",
+        "displayName": "EnergyResource",
+        "description": "Resources that send energy telemetry",
+        "comment": "",
+        "cloudProperties": [
+            {
+                "@id": "urn:azureiot:EnergyResource:City:1",
+                "@type": "Property",
+                "displayName": "City",
+                "name": "City",
+                "writable": true,
+                "schema": "string"
+            },
+            {
+                "@id": "urn:azureiot:EnergyResource:Country:1",
+                "@type": "Property",
+                "displayName": "Country",
+                "name": "Country",
+                "writable": true,
+                "schema": "string"
+            },
+            {
+                "@id": "urn:azureiot:EnergyResource:GridBalancingAuthorityAbbreviation:1",
+                "@type": "Property",
+                "displayName": "GridBalancingAuthorityAbbreviation",
+                "name": "GridBalancingAuthorityAbbreviation",
+                "writable": true,
+                "schema": "string"
+            },
+            {
+                "@id": "urn:azureiot:EnergyResource:DeviceType:1",
+                "@type": "Property",
+                "displayName": "DeviceType",
+                "name": "DeviceType",
+                "writable": true,
+                "schema": "string"
+            },
+            {
+                "@id": "urn:azureiot:EnergyResource:Latitude:1",
+                "@type": "Property",
+                "displayName": "Latitude",
+                "name": "Latitude",
+                "writable": true,
+                "schema": "integer"
+            },
+            {
+                "@id": "urn:azureiot:EnergyResource:Longitude:1",
+                "@type": "Property",
+                "displayName": "Longitude",
+                "name": "Longitude",
+                "writable": true,
+                "schema": "integer"
+            },
+            {
+                "@id": "urn:azureiot:SiteName:1",
+                "@type": "Property",
+                "displayName": "SiteName",
+                "name": "SiteName",
+                "writable": true,
+                "schema": "string"
+            }
+        ]
+    }
 }
