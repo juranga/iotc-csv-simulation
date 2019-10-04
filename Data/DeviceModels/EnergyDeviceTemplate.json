@@ -18,7 +18,7 @@
                     "displayName": "TelemetryInterface",
                     "contents": [
                         {
-                            "@id": "urn:azureiot:EnergyResource:PowerAmountKW:1",
+                            "@id": "urn:azureiot:EnergyResource:EnergyAmountkWh:1",
                             "@type": "Telemetry",
                             "displayName": "EnergyAmountkWh",
                             "name": "EnergyAmountkWh",
@@ -75,7 +75,7 @@
                 "displayName": "Latitude",
                 "name": "Latitude",
                 "writable": true,
-                "schema": "integer"
+                "schema": "double"
             },
             {
                 "@id": "urn:azureiot:EnergyResource:Longitude:1",
@@ -83,7 +83,7 @@
                 "displayName": "Longitude",
                 "name": "Longitude",
                 "writable": true,
-                "schema": "integer"
+                "schema": "double"
             },
             {
                 "@id": "urn:azureiot:SiteName:1",

@@ -20,11 +20,11 @@
                         {
                             "@id": "urn:azureiot:PowerResource:PowerAmountKW:1",
                             "@type": "Telemetry",
-                            "displayName": "PowerAmountkWh",
-                            "name": "PowerAmountkWh",
+                            "displayName": "PowerAmountKW",
+                            "name": "PowerAmountKW",
                             "schema": "double",
-                            "unit": "gCO2kWh",
-                            "displayUnit": "gCO2kWh"
+                            "unit": "kW",
+                            "displayUnit": "kW"
                         }
                     ]
                 }
@@ -75,7 +75,7 @@
                 "displayName": "Latitude",
                 "name": "Latitude",
                 "writable": true,
-                "schema": "integer"
+                "schema": "double"
             },
             {
                 "@id": "urn:azureiot:PowerResource:Longitude:1",
@@ -83,7 +83,7 @@
                 "displayName": "Longitude",
                 "name": "Longitude",
                 "writable": true,
-                "schema": "integer"
+                "schema": "double"
             },
             {
                 "@id": "urn:azureiot:SiteName:1",
