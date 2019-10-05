@@ -9,7 +9,7 @@ import os, sys
 # Prevent local Pycache files from being stored 
 sys.dont_write_bytecode = True 
 
-from src.constants import CONFIG_PATH, AUTH_TOKEN
+from src.constants import CONFIG_PATH, IOT_AUTH_TOKEN
 from src.Deployment.ARM_Deployer import ARM_Deployer
 from src.Deployment.Blob_Deployer import Blob_Deployer
 from src.Deployment.Table_Deployer import Table_Deployer
@@ -42,7 +42,8 @@ template_dir: str = os.path.join(current_dir, 'Templates')
 
 # Authenticate for Azure Resource Deployment. Currently only supports Interactive Login
 credentials = InteractiveLoginAuthentication(force=False, tenant_id=None)
-AUTH_TOKEN = credentials._get_arm_token()
+central_url = 'https://apps.azureiotcentral.com'
+IOT_AUTH_TOKEN = credentials._get_arm_token_using_interactive_auth(resource=central_url)
 
 # Create Deployer class & deploy Azure Resources defined in the Templates Directory
 arm_deployer = ARM_Deployer(credentials= credentials, subscription_id = subscription_id,
@@ -68,6 +69,7 @@ storage_account: str = config['storageAccountName']
 
 csv_folder: str = os.path.join(current_dir, 'Data', 'DeviceData')
 device_models_folder: str = os.path.join(current_dir, 'Data', 'DeviceModels')
+device_csv_file: str = os.path.join(current_dir, 'Data')
 
 # Obtain Storage Account credentials
 storage_client = StorageManagementClient(credentials, subscription_id)
@@ -83,13 +85,14 @@ blob_deployer.upload_blobs_from_folder(folder=device_models_folder, container_na
 # Deploy Azure Table to Storage Account
 # This is done to keep track of what row # the device is currently at in the csv simulated data 
 # the device.
+# TODO: Rethink Azure Table Deployment
 ################################################################################################
 
-device_types_path: str = os.path.join(device_models_folder, 'DeviceModels.csv')
+device_types_path: str = os.path.join(device_csv_file, 'SimulateDevices.csv')
 table_deployer = Table_Deployer(storage_account, storage_keys['key1'], device_types_path)
 
 # Create Devices table 
-table_deployer.create_table(table_name='devices')
+table_deployer.create_table(table_name='Devices')
 
 # Deploy all Devices' Meta Data in to Table
 table_deployer.create_device_entities()

@@ -25,8 +25,8 @@ class Table_Deployer(object):
         dataframe = pd.read_csv(self.device_type_path)
         for _, row in dataframe.iterrows():
             entity = {
-                'PartitionKey': row['DeviceType'],
-                'RowKey': row['IOTC_DeviceID'],
+                'PartitionKey': row['IOTC_DeviceID'],
+                'RowKey': row['DeviceType'],
                 'NextRow': 0,
                 'SimulatedDataSource': row['SimulatedDataSource']
             }
