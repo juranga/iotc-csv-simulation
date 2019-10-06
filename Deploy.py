@@ -4,7 +4,7 @@
 
 from azureml.core.authentication import InteractiveLoginAuthentication, fetch_tenantid_from_aad_token
 from azure.mgmt.storage import StorageManagementClient
-import os, sys
+import os, sys, shutil
 
 # Prevent local Pycache files from being stored 
 sys.dont_write_bytecode = True 
@@ -93,3 +93,10 @@ table_deployer.create_table(table_name='devices')
 
 # Deploy all Devices' Meta Data in to Table
 table_deployer.create_device_entities()
+
+
+################################################################################################
+# Remove Cached Credentials from Interactive Login
+################################################################################################
+cached_credentials = os.path.join(os.path.expanduser('~'), '.azureml', 'auth')
+shutil.rmtree(cached_credentials)
