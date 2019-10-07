@@ -21,13 +21,21 @@ class Table_Deployer(object):
             return
         self.client.create_table(self.table_name)
 
+    def insert_device_entity(self, entity):
+        self.client.insert_entity(self.table_name, entity)
+
     def create_device_entities(self):
         dataframe = pd.read_csv(self.device_type_path)
+        id_count = 0
         for _, row in dataframe.iterrows():
-            entity = {
-                'PartitionKey': row['DeviceType'],
-                'RowKey': row['IOTC_DeviceID'],
-                'NextRow': 0,
-                'SimulatedDataSource': row['SimulatedDataSource']
-            }
-            self.client.insert_entity(self.table_name, entity)
+            for n in range(0, int(row['NumberOfDevices'])):
+                device_id = 'simulateddevice' + str(id_count)
+                entity = {
+                    'PartitionKey': device_id,
+                    'RowKey': row['DeviceType'],
+                    'NextRow': 0,
+                    'SimulatedDataSource': row['SimulatedDataSource']
+                }
+                # DeviceModel,DeviceType,SimulatedDataSource,NumberOfDevices
+                self.client.insert_entity(self.table_name, entity)
+                id_count += 1

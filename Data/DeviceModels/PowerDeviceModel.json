@@ -1,0 +1,98 @@
+{
+    "@type": "ModelDefinition",
+    "displayName": "PowerResource",
+    "capabilityModel": {
+        "@type": "CapabilityModel",
+        "displayName": "PowerResource",
+        "description": "Resource that send power telemetry",
+        "comment": "",
+        "implements": [
+            {
+                "@id": "urn:azureiot:DeviceInformation:1",
+                "@type": "InterfaceInstance",
+                "displayName": "Interface",
+                "name": "PowerResource",
+                "schema": {
+                    "@id": "urn:azureiot:PowerResource:1",
+                    "@type": "Interface",
+                    "displayName": "TelemetryInterface",
+                    "contents": [
+                        {
+                            "@id": "urn:azureiot:PowerResource:PowerAmountKW:1",
+                            "@type": "Telemetry",
+                            "displayName": "PowerAmountKW",
+                            "name": "PowerAmountKW",
+                            "schema": "double",
+                            "unit": "kW",
+                            "displayUnit": "kW"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "solutionModel": {
+        "@type": "SolutionModel",
+        "displayName": "PowerResource",
+        "description": "PowerResource",
+        "comment": "",
+        "cloudProperties": [
+            {
+                "@id": "urn:azureiot:PowerResource:City:1",
+                "@type": "Property",
+                "displayName": "City",
+                "name": "City",
+                "writable": true,
+                "schema": "string"
+            },
+            {
+                "@id": "urn:azureiot:PowerResource:Country:1",
+                "@type": "Property",
+                "displayName": "Country",
+                "name": "Country",
+                "writable": true,
+                "schema": "string"
+            },
+            {
+                "@id": "urn:azureiot:PowerResource:GridBalancingAuthorityAbbreviation:1",
+                "@type": "Property",
+                "displayName": "GridBalancingAuthorityAbbreviation",
+                "name": "GridBalancingAuthorityAbbreviation",
+                "writable": true,
+                "schema": "string"
+            },
+            {
+                "@id": "urn:azureiot:PowerResource:DeviceType:1",
+                "@type": "Property",
+                "displayName": "DeviceType",
+                "name": "DeviceType",
+                "writable": true,
+                "schema": "string"
+            },
+            {
+                "@id": "urn:azureiot:PowerResource:Latitude:1",
+                "@type": "Property",
+                "displayName": "Latitude",
+                "name": "Latitude",
+                "writable": true,
+                "schema": "double"
+            },
+            {
+                "@id": "urn:azureiot:PowerResource:Longitude:1",
+                "@type": "Property",
+                "displayName": "Longitude",
+                "name": "Longitude",
+                "writable": true,
+                "schema": "double"
+            },
+            {
+                "@id": "urn:azureiot:SiteName:1",
+                "@type": "Property",
+                "displayName": "SiteName",
+                "name": "SiteName",
+                "writable": true,
+                "schema": "string"
+            }
+        ]
+    }
+}

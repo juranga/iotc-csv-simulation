@@ -1,0 +1,67 @@
+{
+    "@type": "ModelDefinition",
+    "displayName": "GridCarbonEmissions",
+    "capabilityModel": {
+        "@type": "CapabilityModel",
+        "displayName": "GridCarbonEmissions",
+        "description": "Grid Carbon Emissions",
+        "comment": "",
+        "implements": [
+            {
+                "@id": "urn:azureiot:DeviceInformation:1",
+                "@type": "InterfaceInstance",
+                "displayName": "Interface",
+                "name": "GridCarbonEmissions",
+                "schema": {
+                    "@id": "urn:azureiot:GridCarbonEmissions:1",
+                    "@type": "Interface",
+                    "displayName": "TelemetryInterface",
+                    "contents": [
+                        {
+                            "@id": "urn:azureiot:GridCarbonEmissions:MarginalCO2Intensity_gCO2kWh:1",
+                            "@type": "Telemetry",
+                            "displayName": "MarginalCO2Intensity_gCO2kWh",
+                            "name": "MarginalCO2Intensity_gCO2kWh",
+                            "schema": "double",
+                            "unit": "gCO2kWh",
+                            "displayUnit": "gCO2kWh"
+                        },
+                        {
+                            "@id": "urn:azureiot:GridCarbonEmissions:SystemWideCO2Intensity_gCO2kWh:1",
+                            "@type": "Telemetry",
+                            "displayName": "SystemWideCO2Intensity_gCO2kWh",
+                            "name": "SystemWideCO2Intensity_gCO2kWh",
+                            "schema": "double",
+                            "unit": "gCO2kWh",
+                            "displayUnit": "gCO2kWh"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "solutionModel": {
+        "@type": "SolutionModel",
+        "displayName": "GridCarbonEmissions",
+        "description": "GridCarbonEmissions",
+        "comment": "",
+        "cloudProperties": [
+            {
+                "@id": "urn:azureiot:GridCarbonEmissions:AverageCO2Intensity_gCO2kWh:1",
+                "@type": "Property",
+                "displayName": "AverageCO2Intensity_gCO2kWh",
+                "name": "AverageCO2Intensity_gCO2kWh",
+                "writable": true,
+                "schema": "double"
+            },
+            {
+                "@id": "urn:azureiot:GridCarbonEmissions:GridBalancingAuthorityAbbreviation:1",
+                "@type": "Property",
+                "displayName": "GridBalancingAuthorityAbbreviation",
+                "name": "GridBalancingAuthorityAbbreviation",
+                "writable": true,
+                "schema": "string"
+            }
+        ]
+    }
+}
