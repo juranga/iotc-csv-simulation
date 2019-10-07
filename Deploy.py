@@ -9,7 +9,7 @@ import os, sys
 # Prevent local Pycache files from being stored 
 sys.dont_write_bytecode = True 
 
-from src.constants import CONFIG_PATH, IOT_AUTH_TOKEN
+from src.constants import CONFIG_PATH
 from src.Deployment.ARM_Deployer import ARM_Deployer
 from src.Deployment.Blob_Deployer import Blob_Deployer
 from src.Deployment.Table_Deployer import Table_Deployer

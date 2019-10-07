@@ -1,3 +1,7 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
 import requests
 import os, json
 
@@ -42,6 +46,19 @@ class Iot_Central_Deployer(object):
             if resp.status_code >= 300 or resp.status_code < 200:
                 print(resp.content)
 
-    def deploy_devices(self):
+    def deploy_device(self, device_id, device_model):
+        device = {
+                    "@type": "string",
+                    "displayName": "",
+                    "description": "",
+                    "comment": "",
+                    "instanceOf": device_model,
+                    "simulated": False,
+                    "deviceId": device_id,
+                    "approved": True
+                }
+        resp = requests.post(self.models_url, headers=self.header, json=device)
+        if not resp.status_code == 201:
+            print('Device {} Malformed.'.format(device_id))
         return
 
