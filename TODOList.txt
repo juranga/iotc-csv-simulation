@@ -14,15 +14,6 @@ Should I throttle when uploading devices just to make sure it doesn't break?
 
 ----------------------------------------------------------------------------
 
-Investigation Required:  
-
--Device Authentication may not be able to be done easily.
-- Investigate Device Authentication in Central. Would creating a device authenticate it too?
-
-DEVICE 
-
-----------------------------------------------------------------------------
-
 
 1) Error checking Required:
 
@@ -40,9 +31,6 @@ As such, going forward, it would make sense to refactor and implement a more eff
 
 1.4) Error checking for Azure Table Ids
 
-1.5) IMPORTANT: Error checking to see if DeviceModels already exist in application. 
-[If they do not, create them? Warn user? How do I address this?]
-
 1.6) Error Checking for API Calls succeeding?
 
 ----------------------------------------------------------------------------
@@ -51,21 +39,9 @@ Cool Refactoring work:
 Finding out how to programatically check if resource exists based solely off name and not user saying it exists & have it work correctly with Template Deployment dependencies.
 (Not an easy problem, might require architectural change to ARM deployment process right now.. So that entire ARM class would have to be refactored.)
 
-
 ----------------------------------------------------------------------------
- 
-2) Authentication Currently Caches the id of user who last runs script locally
-- This might be a security issue if user's PC is not fully secure?
-- The current implementation for Authentication api says: 
-**If the user is already logged in to azure CLI or have logged-in before, the constructor will load the existing credentials without prompt.**
-- Investigate how to log off azure cli might be good idea programtically.
 
-How it is right now: 
-This is currently based off Azure ML's authentication through Azure cli. 
-They plan on this to be CLI independent, and therefore the code will likely change on their end. We do not know what approach they will use.
-This can be fixed by forcing the current azure ml core service to the version we currently have (done already),
-but this is a temporary fix and we should use caution going forward if interactive login is what we want.
-The alternative is device login, which is an additional manual step from users similar to santorini CLI.
+2) Investigate Credentials Authentication with AzureML Folks to see if they can support functionality outside of azml
 
 ----------------------------------------------------------------------------
  
@@ -85,9 +61,6 @@ If Config gets updated but Azure Resources are not fully deployed, this is also 
 * User needs to be notified that if they delete the resource group or any particular resource, then the default params must be updated.
 (This would potentially get fixed with a rearchitecturing of how resource provisioning is currently implemented. This would get fixed with the Refactoring work stated above)
 
-----------------------------------------------------------------------------
- 
-5) Look in to JSON objects for Device Models (Re think simulation of devices, but also care only about CSVs)
 
 ----------------------------------------------------------------------------
 

@@ -7,8 +7,11 @@
   },
   "0": {
     "deploymentName": "IoT Central",
-    "iotCentralDomain": {
-      "value": "customsimiotc"
+    "resourceName": {
+      "value": "customsimiota"
+    },
+    "subdomain": {
+      "value": "customsimiota"
     },
     "exists": false
   },
@@ -29,6 +32,9 @@
     },
     "appServicePlanName": {
       "value": "customsimasp"
+    },
+    "keyVaultName": {
+      "value": "customsimkv"
     },
     "exists": false
   }

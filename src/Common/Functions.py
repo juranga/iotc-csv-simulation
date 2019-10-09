@@ -4,6 +4,7 @@
 
 from azure.storage.blob import BlockBlobService
 from azureml.core.authentication import fetch_tenantid_from_aad_token
+import datetime
 import json
 import os
 import uuid
@@ -29,4 +30,7 @@ def write_to_config(options: dict):
     write_json(file=CONFIG_PATH, data=config)
 
     
+def unix_time_millis(dt):
+    epoch = datetime.datetime.utcfromtimestamp(0)
+    return (dt - epoch).total_seconds() * 1000.0
 

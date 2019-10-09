@@ -4,5 +4,8 @@
     },
     "location": {
       "value": ""
+    },
+    "keyVaultName": {
+      "value": ""
     }
-  }
+}

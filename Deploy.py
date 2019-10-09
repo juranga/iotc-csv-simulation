@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 from azureml.core.authentication import InteractiveLoginAuthentication, fetch_tenantid_from_aad_token
+from azure.mgmt.keyvault import KeyVaultManagementClient
 from azure.mgmt.storage import StorageManagementClient
 import os, sys, shutil
 
@@ -13,63 +14,75 @@ from src.constants import CONFIG_PATH
 from src.Deployment.ARM_Deployer import ARM_Deployer
 from src.Deployment.Blob_Deployer import Blob_Deployer
 from src.Deployment.Table_Deployer import Table_Deployer
+from src.Deployment.Device_Deployer import Device_Deployer
+from src.Deployment.Iot_Central_Deployer import Iot_Central_Deployer
+from src.Deployment.Keyvault_Deployer import Keyvault_Deployer
 from src.Common.Functions import load_json, write_to_config
 
 ################################################################################################
-# Fill in values for customization & use in Deployment 
+# Fill in value in this section for Subscription Id
 ################################################################################################
 
 # Subscription is obtained from azure portal. Ask management if you do not know which id to use.
 subscription_id: str = '' if len(sys.argv) < 2 else sys.argv[1]
 
 ################################################################################################
-# Deploy Azure Resources
+# Obtain Credentials via Interactive Login & Deploy Azure Resources
 ################################################################################################
+
 current_dir: str = os.getcwd()
 
 # Load Config file to check if the deployment has already been ran.
 config: dict = load_json(CONFIG_PATH)
-deployed: bool = config['deployed']
+has_ARM_deployed: bool = config['deployed']
 
-# Get Default Parameters set by User 
+# Get Default Parameters 
 default_param_path: str = os.path.join(current_dir, 'Templates', 'default.params.json')
 default_params: dict = load_json(default_param_path)
 location: str = default_params['location']['value']
 resource_group: str = default_params['resourceGroupName']['value']
 
+# Ugly way to get IoT Central App Name and Keyvault Name.
+# Getting this info currently is hard coded and error prone. 
+# These problems would be easy to fix with a UI.. TODO Potentially Rethink Config State
+iot_app_name: str = default_params['0']['subdomain']['value']
+keyvault_name: str = default_params['2']['keyVaultName']['value']
+
 # Get Template dir by joining current dir and Templates folder
 template_dir: str = os.path.join(current_dir, 'Templates')
 
-# Authenticate for Azure Resource Deployment. Currently only supports Interactive Login
+# Authenticate for Azure Resource Deployment 
 credentials = InteractiveLoginAuthentication(force=False, tenant_id=None)
-central_url = 'https://apps.azureiotcentral.com'
-IOT_AUTH_TOKEN = credentials._get_arm_token_using_interactive_auth(resource=central_url)
 
-# Create Deployer class & deploy Azure Resources defined in the Templates Directory
+# Create Deployer class for ARM resources
 arm_deployer = ARM_Deployer(credentials= credentials, subscription_id = subscription_id,
                               resource_group= resource_group, template_dir= template_dir,
                               location= location)
 
 
-# Updates config file for two reasons:
+# Deploy Azure Resources & Update config file.
+# Config file is updated for two reasons: 
 # 1: Resources won't be provisioned twice
 # 2: If new data models/csvs are added, running the script again deploys only these files.
-if not deployed:
+if not has_ARM_deployed:
     arm_deployer.deploy_all()
     config['deployed'] = True
     write_to_config(config)
     
 
 ################################################################################################
-# Deploy Blob CSV Files & Containers to Storage Account
+# Obtain Storage Account Credentials & Deploy Blob CSV Files, Containers, & Azure Table
+# Azure Table is used for storing Device State
 ################################################################################################
 
 # Get Data Path Files & Storage Account Name
+config = load_json(CONFIG_PATH) # Reload Config to get storageAccountName
 storage_account: str = config['storageAccountName']
 
+# Get Folder Paths for Simulated CSVs & Device Models
 csv_folder: str = os.path.join(current_dir, 'Data', 'DeviceData')
 device_models_folder: str = os.path.join(current_dir, 'Data', 'DeviceModels')
-device_csv_file: str = os.path.join(current_dir, 'Data')
+sim_devices_path: str = os.path.join(current_dir, 'Data', 'SimulateDevices.csv')
 
 # Obtain Storage Account credentials
 storage_client = StorageManagementClient(credentials, subscription_id)
@@ -81,25 +94,30 @@ blob_deployer = Blob_Deployer(storage_account, storage_keys['key1'])
 blob_deployer.upload_blobs_from_folder(folder=csv_folder, container_name='simcsvfiles')
 blob_deployer.upload_blobs_from_folder(folder=device_models_folder, container_name='simdevicemodels')
 
+# Create Azure Table via Table Deployer Class
+table_deployer = Table_Deployer(name=storage_account, key=storage_keys['key1'], simulated_devices_csvpath=sim_devices_path)
+table_deployer.create_table(table_name='devices')
+
 ################################################################################################
-# Deploy Azure Table to Storage Account
-# This is done to keep track of what row # the device is currently at in the csv simulated data 
-# the device.
-# TODO: Rethink Azure Table Deployment
+# Deploy Devices to IoT Central. Since Azure Table is dependent on Devices existing, Central &
+# the Azure Table need to be in sync and therefore a Device Deployer class takes care of both.
+# Additionally, a Keyvault deployer is required to store secrets from the newly created  simulated
+# device.
 ################################################################################################
 
-device_types_path: str = os.path.join(device_csv_file, 'SimulateDevices.csv')
-table_deployer = Table_Deployer(storage_account, storage_keys['key1'], device_types_path)
+# Create Deployers Necessary for Device Deployer Class
+keyvault_deployer = Keyvault_Deployer(credentials, subscription_id=subscription_id, resource_group=resource_group, keyvault_name=keyvault_name)
+central_deployer = Iot_Central_Deployer(credentials, app_domain_name=iot_app_name)
 
-# Create Devices table 
-table_deployer.create_table(table_name='Devices')
+# Deploy Models
+central_deployer.deploy_models(models_dir=device_models_folder)
 
-# Deploy all Devices' Meta Data in to Table
-table_deployer.create_device_entities()
-
+# Deploy Devices 
+device_deployer = Device_Deployer(azure_table_deployer=table_deployer, iot_central_deployer=central_deployer, keyvault_deployer=keyvault_deployer)
+device_deployer.create_simulated_devices()
 
 ################################################################################################
 # Remove Cached Credentials from Interactive Login
 ################################################################################################
-cached_credentials = os.path.join(os.path.expanduser('~'), '.azureml', 'auth')
-shutil.rmtree(cached_credentials)
+#cached_credentials = os.path.join(os.path.expanduser('~'), '.azureml', 'auth')
+#shutil.rmtree(cached_credentials)

@@ -4,18 +4,17 @@
 
 import pandas as pd
 
-from src.Deployment.Table_Deployer import Table_Deployer
-from src.Deployment.Iot_Central_Deployer import Iot_Central_Deployer
-
 class Device_Deployer(object):
 
-    def __init__(self, table_deployer, iotcentral_deployer):
-        self.table_deployer = table_deployer
-        self.iotcentral_deployer = iotcentral_deployer
+    def __init__(self, azure_table_deployer, iot_central_deployer, keyvault_deployer):
+        self.azure_table_deployer = azure_table_deployer
+        self.iot_central_deployer = iot_central_deployer
+        self.keyvault_deployer = keyvault_deployer
         return
 
+    # Creates the devices designated from the Simulated Devices csv file 
     def create_simulated_devices(self):
-        dataframe = pd.read_csv(self.table_deployer.device_type_path)
+        dataframe = pd.read_csv(self.azure_table_deployer.simulated_devices_csvpath)
         id_count = 0
         for _, row in dataframe.iterrows():
             for n in range(0, int(row['NumberOfDevices'])):
@@ -26,6 +25,14 @@ class Device_Deployer(object):
                     'NextRow': 0,
                     'SimulatedDataSource': row['SimulatedDataSource']
                 }
-                if self.iotcentral_deployer.deploy_device(device_id= device_id, device_model= row['DeviceModel']):
-                    self.table_deployer.client.insert_entity(self.table_deployer.table_name, entity)
+                # Check if device deployment to central is successful 
+                if self.iot_central_deployer.deploy_device(device_id= device_id, device_model= row['DeviceModel']):
+
+                    # Retrieve Connection String & insert in to Keyvault
+                    # This will be used by the Azure Function to send telemetry functioning as that device
+                    connection_string = self.iot_central_deployer.get_device_connection_string(device_id)
+                    self.keyvault_deployer.insert_secret(name=device_id, value=connection_string)
+
+                    # Insert a Device Entity for Azure Table to store state of device
+                    self.azure_table_deployer.insert_device_entity(entity)
                     id_count += 1

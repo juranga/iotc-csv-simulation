@@ -12,7 +12,7 @@ class Blob_Deployer(object):
         self.storage_key: str = key
         self.blob_client = BlockBlobService(account_name=name, account_key=key)
 
-    # Create Azure Blob Service & CSV Files container
+    # Create Azure Blob Service & CSV File containers
     def upload_blobs_from_folder(self, folder, container_name='devicedata'):
         container = self.blob_client.create_container(container_name)
         if container:
