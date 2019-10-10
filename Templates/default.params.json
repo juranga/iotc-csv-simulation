@@ -33,9 +33,6 @@
     "appServicePlanName": {
       "value": "customsimasp"
     },
-    "keyVaultName": {
-      "value": "customsimkv"
-    },
     "exists": false
   }
 }

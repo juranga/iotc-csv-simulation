@@ -10,13 +10,13 @@ import os, sys, shutil
 # Prevent local Pycache files from being stored 
 sys.dont_write_bytecode = True 
 
-from src.constants import CONFIG_PATH
+from src.constants import CONFIG_PATH, SIM_DEVICES_PATH
 from src.Deployment.ARM_Deployer import ARM_Deployer
 from src.Deployment.Blob_Deployer import Blob_Deployer
 from src.Deployment.Table_Deployer import Table_Deployer
 from src.Deployment.Device_Deployer import Device_Deployer
 from src.Deployment.Iot_Central_Deployer import Iot_Central_Deployer
-from src.Deployment.Keyvault_Deployer import Keyvault_Deployer
+from src.Deployment.Azure_Function_Deployer import Azure_Function_Deployer
 from src.Common.Functions import load_json, write_to_config
 
 ################################################################################################
@@ -69,6 +69,9 @@ if not has_ARM_deployed:
     config['deployed'] = True
     write_to_config(config)
     
+# SimulateDevices.csv needs to be discoverable by Device Deployer to know how many devices to create.
+# Therefore SIM_DEVICES_PATH global is updated here, since the ARM deployment has succeeded. 
+SIM_DEVICES_PATH = os.path.join(current_dir, 'Data', 'SimulatedDevices.csv')
 
 ################################################################################################
 # Obtain Storage Account Credentials & Deploy Blob CSV Files, Containers, & Azure Table
@@ -82,7 +85,6 @@ storage_account: str = config['storageAccountName']
 # Get Folder Paths for Simulated CSVs & Device Models
 csv_folder: str = os.path.join(current_dir, 'Data', 'DeviceData')
 device_models_folder: str = os.path.join(current_dir, 'Data', 'DeviceModels')
-sim_devices_path: str = os.path.join(current_dir, 'Data', 'SimulateDevices.csv')
 
 # Obtain Storage Account credentials
 storage_client = StorageManagementClient(credentials, subscription_id)
@@ -95,7 +97,7 @@ blob_deployer.upload_blobs_from_folder(folder=csv_folder, container_name='simcsv
 blob_deployer.upload_blobs_from_folder(folder=device_models_folder, container_name='simdevicemodels')
 
 # Create Azure Table via Table Deployer Class
-table_deployer = Table_Deployer(name=storage_account, key=storage_keys['key1'], simulated_devices_csvpath=sim_devices_path)
+table_deployer = Table_Deployer(name=storage_account, key=storage_keys['key1'])
 table_deployer.create_table(table_name='devices')
 
 ################################################################################################
@@ -105,15 +107,16 @@ table_deployer.create_table(table_name='devices')
 # device.
 ################################################################################################
 
-# Create Deployers Necessary for Device Deployer Class
-keyvault_deployer = Keyvault_Deployer(credentials, subscription_id=subscription_id, resource_group=resource_group, keyvault_name=keyvault_name)
+# Create Azure Function and IoT Central Deployers Necessary for Device Deployer Class
+# The Azure Function will act as the device, and the Central Deployment authenticates and create devices
+azure_function_deployer = Azure_Function_Deployer(credentials, subscription_id=subscription_id, resource_group=resource_group)
 central_deployer = Iot_Central_Deployer(credentials, app_domain_name=iot_app_name)
 
 # Deploy Models
 central_deployer.deploy_models(models_dir=device_models_folder)
 
 # Deploy Devices 
-device_deployer = Device_Deployer(azure_table_deployer=table_deployer, iot_central_deployer=central_deployer, keyvault_deployer=keyvault_deployer)
+device_deployer = Device_Deployer(azure_table_deployer=table_deployer, iot_central_deployer=central_deployer, azure_function_deployer=azure_function_deployer)
 device_deployer.create_simulated_devices()
 
 ################################################################################################

@@ -1,3 +1,8 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
+
 import hmac, base64, hashlib
 import time, datetime
 import requests, json, urllib

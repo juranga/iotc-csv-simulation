@@ -69,7 +69,6 @@ class ARM_Deployer(object):
 
             # Custom Configuration
             # Save storage account to config to be used in main deployment script.
-            # The if statements below this comment are done to update the config found in the src dir.
             if key == 'storageAccountName':
                 write_to_config({
                     'storageAccountName': parameters[key]['value']

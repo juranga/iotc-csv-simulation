@@ -1,19 +1,17 @@
 Forseeable problems if this device simulation solution is intended on becoming a full fledged problem that we support and not a temporary one:
 
+0)
+UPDATE README
 
-URGENT IN CASE I LEAVE FRIDAY EVENING BEFORE FINISHING: DEVICE IDS NEED TO BE INSERTED PROGRAMATICALLY TO CENTRAL & THE AZURE TABLE NOW
-----------------------------------------------------------------------------
 
-0) Create Azure Functions for each Simulated CSV
+0.5) 2 choices here: 
 
---- Class Required instead of DeviceModels.json?
---- I should parse the DeviceModels.json for the Csv Energy Telemetry?
-
-Questions to Consider:
-Should I throttle when uploading devices just to make sure it doesn't break?
+1. Either have the user ALREADY have an Application in Central that you can then direct them to get the master key and pass it as a param when running the deployment or
+2. Add individual connection strings to Keyvault 
 
 ----------------------------------------------------------------------------
 
+TODO: MasterKey obtained via going to IoT Central App... Otherwise you have to api call IoT Central for sas key every time. 
 
 1) Error checking Required:
 
@@ -43,11 +41,6 @@ Finding out how to programatically check if resource exists based solely off nam
 
 2) Investigate Credentials Authentication with AzureML Folks to see if they can support functionality outside of azml
 
-----------------------------------------------------------------------------
- 
-3) If Azure Function or Storage Accounts fail at all for X amount of time, should replay data act differently?
-How much customization should we do for this particular replay feature? 
-- What about when timestamp data is involved?
 
 ----------------------------------------------------------------------------
  

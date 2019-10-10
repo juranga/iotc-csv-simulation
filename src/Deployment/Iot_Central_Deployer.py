@@ -39,7 +39,7 @@ class Iot_Central_Deployer(object):
         models = []
         models_url = '{}/models'.format(self.url)
         resp = requests.get(models_url, headers=self.header)
-        if resp.status_code == 200:
+        if resp.status_code == 200 or resp.status_code == 202:
             model_list = json.loads(resp.content)['value']
             for model in model_list:
                 models.append(model['displayName'])
