@@ -7,12 +7,10 @@ import pandas as pd
 
 class Device_Deployer(object):
 
-    def __init__(self, azure_table_deployer, iot_central_deployer, azure_function_deployer):
+    def __init__(self, azure_table_deployer, iot_central_deployer, key_vault_deployer):
         self.azure_table_deployer = azure_table_deployer
         self.iot_central_deployer = iot_central_deployer
-        self.azure_function_deployer = azure_function_deployer
-        self.iot_hub = None
-        self.sas = None
+        self.key_vault_deployer = key_vault_deployer
         return
 
     # Creates the devices designated from the Simulated Devices csv file 
@@ -27,28 +25,17 @@ class Device_Deployer(object):
                 entity = {
                     'PartitionKey': device_id,
                     'RowKey': row['DeviceType'],
-                    'LastKnownRow': 0,
+                    'LastKnownRow': 1,
                     'SimulatedDataSource': row['SimulatedDataSource']
                 }
                 # Check if device deployment to central is successful 
                 if self.iot_central_deployer.deploy_device(device_id= device_id, device_model= row['DeviceModel']):
 
-                    # Retrieve Connection String to parse for hub and sas token
-                    # This will be used by the Azure Function to send telemetry functioning as that device
+                    # Retrieve Connection String 
                     connection_string = self.iot_central_deployer.get_device_connection_string(device_id)
 
-                    # Update Azure Function App Settings to include the IoT Hub & the Sas Key.
-                    # This is done so that the Azure Function can easily obtain the necessary
-                    # authentication to send telemetry as a device.
-                    if self.iot_hub == None and not connection_string == None:
-                        connection_string = connection_string.split(';')
-                        self.iot_hub = connection_string[0] #iothub
-                        self.sas = connection_string[2] #sas token
-                        device_settings = {
-                            "iotHub": self.iot_hub,
-                            "sas": self.sas
-                        }
-                        self.azure_function_deployer.insert_app_settings(settings=device_settings)
+                    # Insert Connection String in to Key Vault for Azure Function to Access
+                    self.key_vault_deployer.insert_secret(device_id, connection_string)
 
                     # Insert a Device Entity for Azure Table to store state of device
                     self.azure_table_deployer.insert_device_entity(entity)

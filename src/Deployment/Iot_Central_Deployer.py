@@ -20,13 +20,13 @@ class Iot_Central_Deployer(object):
         self.app_domain_name = app_domain_name
         self.credentials = credentials
         self.api_version = 'preview'
-        self.url = 'https://{}.azureiotcentral.com/api/{}/'.format(self.app_domain_name, self.api_version)
-        self.existing_models = self.get_existing_models()
+        self.url = 'https://{}.azureiotcentral.com/api/{}'.format(self.app_domain_name, self.api_version)
         self.auth_token = self.get_auth_token()
         self.header = {
             'Authorization': 'Bearer ' + self.auth_token,
             'Content-Type': 'application/json'
         }
+        self.existing_models = self.get_existing_models()
         self.dps_keygen = Dps_Keygen()
 
     def get_auth_token(self):
@@ -34,16 +34,21 @@ class Iot_Central_Deployer(object):
         token = self.credentials._get_arm_token_using_interactive_auth(resource=central_url)
         return token
 
-    # Existing Models need to be stored to easily check if a model already exists when deploying.
+    # Existing Models are stored as dictionary objects 
+    # to easily check if a model already exists when deploying, and for ease of access to
+    # the interface id which is used to create new simulated devices.
     def get_existing_models(self):
-        models = []
-        models_url = '{}/models'.format(self.url)
+        print('Checking Existing models...')
+        existing_models = {}
+        models_url = '{}/models/'.format(self.url)
         resp = requests.get(models_url, headers=self.header)
         if resp.status_code == 200 or resp.status_code == 202:
             model_list = json.loads(resp.content)['value']
             for model in model_list:
-                models.append(model['displayName'])
-        return models
+                # Saves the model name & the interface instance id.
+                # This is required for when creating new devices of this model
+                existing_models[model['displayName']]['id'] = model['implements']['@id']
+        return existing_models
 
     # Get Device Scope Id and Primary Key from IoT Central
     def get_device_connection_string(self, device_id: str):
@@ -65,6 +70,7 @@ class Iot_Central_Deployer(object):
         
     # Deploys the models in the DeviceModels folder
     def deploy_models(self, models_dir: str):
+        print('Deploying Models to IoT Central')
         models_url = self.url + 'models/' 
         for model_file_name in os.listdir(models_dir):
             model_file_path = os.path.join(os.getcwd(), 'deviceModels', model_file_name)
@@ -72,7 +78,7 @@ class Iot_Central_Deployer(object):
 
             # Check if model already exists in existing models
             # If it does, skip deploying that model 
-            if model['displayName'] in self.existing_models:
+            if model['displayName'] in self.existing_models.keys():
                 continue
             resp = requests.post(models_url, headers=self.header, json=model)
 
@@ -81,16 +87,18 @@ class Iot_Central_Deployer(object):
         devices_url = '{}/devices/'.format(self.url)
         if self.is_existing_device(device_id):
             return True
+
+        # Instance of is obtained by parsing the Model's interface id
+        # Example: "urn:iotcentral:model" would give iotcentral in the code below
+        instance_of = self.existing_models[device_model]['id'].split(':')[1]
         device = {
-                    '@type': 'string',
-                    'displayName': '',
-                    'description': '',
-                    'comment': '',
-                    'instanceOf': device_model,
-                    'simulated': False,
-                    'deviceId': device_id,
-                    'approved': True
-                }
+                '@type': 'Device',
+                'id': device_id,
+                'displayName': device_id,
+                'instanceOf': 'urn:{}:modelDefinition:{}'.format(instance_of, device_model),
+                'simulated': False,
+                'approved': True
+            }
         resp = requests.post(devices_url, headers=self.header, json=device)
-        return resp.status_code == 200 or resp.status_code == 202
+        return resp.status_code == 200 or resp.status_code == 201
 

@@ -4,10 +4,20 @@ Forseeable problems if this device simulation solution is intended on becoming a
 UPDATE README
 
 
-0.5) 2 choices here: 
+0.5) Finish Azure Functions deployer class 
 
-1. Either have the user ALREADY have an Application in Central that you can then direct them to get the master key and pass it as a param when running the deployment or
-2. Add individual connection strings to Keyvault 
+
+
+
+
+----------------------------------------------------------------------------
+
+Question for CSVs: Currently storing them in Blobs means we read them as a Stream.
+If the csv file is ENORMOUS, I can definitely see this becoming an issue.
+Editing of this GetCSVBlobData function in Azure Function would be ideal to account for streaming 
+
+Or: We can enforce the # of rows and columns to be a specific amount? 
+Highly likely it's better to do the first rather than enforce user to do this option.
 
 ----------------------------------------------------------------------------
 

@@ -46,8 +46,9 @@ class Dps_Keygen(object):
         return None
 
     # python version of: https://github.com/Azure/dps-keygen/blob/master/dps.js
+    # TODO: Test the self.iot_hub on multiple devices.
     def generate_connection_string(self, device_id, scope_id, sas_key):
-
+        print('Generating connection string')
         # If iot hub has been obtained or specified already, Connection String can be easily obtained
         if not self.iot_hub == None:
             return 'HostName={};DeviceId={};SharedAccessKey={}'.format(self.iot_hub, device_id, sas_key)
@@ -60,6 +61,7 @@ class Dps_Keygen(object):
             headers = resp[0]
             operation_id = resp[1] 
             # Loop waiting on Status of Device Provisioning
+            print('Registered Device on Hub')
             while True:
                 uri = 'https://global.azure-devices-provisioning.net/{}/registrations/{}/operations/{}?api-version={}'.format(scope_id, device_id, operation_id, api_version)
                 resp = requests.get(uri, headers=headers)
@@ -70,7 +72,7 @@ class Dps_Keygen(object):
                         self.iot_hub = data['assignedHub']
                         return 'HostName={};DeviceId={};SharedAccessKey={}'.format(self.iot_hub, device_id, sas_key)
                     elif data['status'] == 'assigning':
-                        time.sleep(5)
+                        time.sleep(1.5)
                 # Failed Get Request
                 else:
                     print(resp.content)

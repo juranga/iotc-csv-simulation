@@ -17,6 +17,7 @@ from src.Deployment.Table_Deployer import Table_Deployer
 from src.Deployment.Device_Deployer import Device_Deployer
 from src.Deployment.Iot_Central_Deployer import Iot_Central_Deployer
 from src.Deployment.Azure_Function_Deployer import Azure_Function_Deployer
+from src.Deployment.Keyvault_Deployer import Keyvault_Deployer
 from src.Common.Functions import load_json, write_to_config
 
 ################################################################################################
@@ -36,7 +37,7 @@ current_dir: str = os.getcwd()
 config: dict = load_json(CONFIG_PATH)
 has_ARM_deployed: bool = config['deployed']
 
-# Get Default Parameters 
+# Get Default Parameters set by user
 default_param_path: str = os.path.join(current_dir, 'Templates', 'default.params.json')
 default_params: dict = load_json(default_param_path)
 location: str = default_params['location']['value']
@@ -78,6 +79,7 @@ SIM_DEVICES_PATH = os.path.join(current_dir, 'Data', 'SimulatedDevices.csv')
 # Azure Table is used for storing Device State
 ################################################################################################
 
+
 # Get Data Path Files & Storage Account Name
 config = load_json(CONFIG_PATH) # Reload Config to get storageAccountName
 storage_account: str = config['storageAccountName']
@@ -98,25 +100,26 @@ blob_deployer.upload_blobs_from_folder(folder=device_models_folder, container_na
 
 # Create Azure Table via Table Deployer Class
 table_deployer = Table_Deployer(name=storage_account, key=storage_keys['key1'])
-table_deployer.create_table(table_name='devices')
+#table_deployer.create_table(table_name='devices')
+
 
 ################################################################################################
 # Deploy Devices to IoT Central. Since Azure Table is dependent on Devices existing, Central &
-# the Azure Table need to be in sync and therefore a Device Deployer class takes care of both.
-# Additionally, a Keyvault deployer is required to store secrets from the newly created  simulated
-# device.
+# the Azure Table need to be in sync and therefore a Device Deployer class handles orchestration
+# of both.
+# Additionally, a Keyvault deployer is required to store the connection strings of each new 
+# device in order for the Azure Function to authenticate as that device & send telemetry.
 ################################################################################################
 
-# Create Azure Function and IoT Central Deployers Necessary for Device Deployer Class
-# The Azure Function will act as the device, and the Central Deployment authenticates and create devices
-azure_function_deployer = Azure_Function_Deployer(credentials, subscription_id=subscription_id, resource_group=resource_group)
+# Create Keyvault and IoT Central Deployers 
 central_deployer = Iot_Central_Deployer(credentials, app_domain_name=iot_app_name)
+key_vault_deployer = Keyvault_Deployer(credentials, subscription_id, resource_group, keyvault_name)
 
-# Deploy Models
+# Deploy Models in DeviceModels folder
 central_deployer.deploy_models(models_dir=device_models_folder)
 
-# Deploy Devices 
-device_deployer = Device_Deployer(azure_table_deployer=table_deployer, iot_central_deployer=central_deployer, azure_function_deployer=azure_function_deployer)
+# Create Deployer class for Devices & Create simulated Devices in Central
+device_deployer = Device_Deployer(azure_table_deployer=table_deployer, iot_central_deployer=central_deployer, key_vault_deployer=key_vault_deployer)
 device_deployer.create_simulated_devices()
 
 ################################################################################################

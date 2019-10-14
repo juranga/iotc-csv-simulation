@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Threading;
 using Microsoft.Azure.Storage.Blob;
+using Microsoft.Azure.KeyVault;
+using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.WindowsAzure.Storage.Table;
 using Microsoft.Azure.Devices.Client;
 using System.Collections.Generic;
@@ -12,28 +14,38 @@ namespace Microsoft.Azure.IotCentral.Simulation
 {
     public class CsvDeviceSimulator
     {
-        private string blobContainerName;
-        private string iotHub;
-        private string sasToken;
+        private string storageAccountName;
+        private string keyVaultUrl;
         private Dictionary<String, String> dataSources;
+        private string blobContainerName;
         private Microsoft.Azure.Storage.CloudStorageAccount blobStorageAccount;
         private Microsoft.WindowsAzure.Storage.CloudStorageAccount tableStorageAccount;
 
         public CsvDeviceSimulator()
         {
-            iotHub = Environment.GetEnvironmentVariable("iotHub");
-            sasToken = Environment.GetEnvironmentVariable("sas");
+            storageAccountName = Environment.GetEnvironmentVariable("StorageAccountName");
+            keyVaultUrl = Environment.GetEnvironmentVariable("KeyVaultBaseUrl");
             dataSources = new Dictionary<string, string>();
             blobContainerName = "simcsvfiles";
-            blobStorageAccount = Microsoft.Azure.Storage.CloudStorageAccount.Parse(Environment.GetEnvironmentVariable("AzureStorageConnectionString", EnvironmentVariableTarget.Process));
-            tableStorageAccount = Microsoft.WindowsAzure.Storage.CloudStorageAccount.Parse(Environment.GetEnvironmentVariable("AzureStorageConnectionString", EnvironmentVariableTarget.Process));
         }
 
-        public async void SendTelemetryData(string deviceType)
+        public async void SendTelemetryDataOfType(string deviceType)
         {
+            // Create KeyVault Client to fetch Connection String Secrets
+            var tokenProvider = new AzureServiceTokenProvider();
+            var authenticationCallback = new KeyVaultClient.AuthenticationCallback(tokenProvider.KeyVaultTokenCallback);
+            KeyVaultClient vaultClient = new KeyVaultClient(authenticationCallback);
+
+            // Create Clients for blob storage & table storage accounts from storage connection string
+            var AzureStorageSecret = await vaultClient.GetSecretAsync(keyVaultUrl, "StorageAccountConnectionString");
+            string storageConnectionString = AzureStorageSecret.Value;
+            blobStorageAccount = Microsoft.Azure.Storage.CloudStorageAccount.Parse(storageConnectionString);
+            tableStorageAccount = Microsoft.WindowsAzure.Storage.CloudStorageAccount.Parse(storageConnectionString);
+
+            // Create Cloud Table Client to get the list of Devices of deviceType from Azure Table. 
             CloudTableClient tableClient = tableStorageAccount.CreateCloudTableClient();
             CloudTable table = tableClient.GetTableReference("devices");
-            var query= new TableQuery<SimulatedDeviceDetails>().Where(TableQuery.GenerateFilterCondition("PartitionKey",
+            var query = new TableQuery<SimulatedDeviceDetails>().Where(TableQuery.GenerateFilterCondition("PartitionKey",
                                                      QueryComparisons.Equal, deviceType)
                                                      );
 
@@ -41,7 +53,9 @@ namespace Microsoft.Azure.IotCentral.Simulation
             do
             {
                 var tableQueryResult = await table.ExecuteQuerySegmentedAsync(query, continuationToken);
-                foreach (SimulatedDeviceDetails device in tableQueryResult.Results) {
+
+                foreach (var device in tableQueryResult.Results)
+                {
 
                     // If Simulated Data Source has not been loaded yet to dataSources dict, then load it & store it.
                     // This is done to cache the data sources so as to not continuously parse an entire csv file for each device
@@ -63,20 +77,20 @@ namespace Microsoft.Azure.IotCentral.Simulation
 
                     // Create the Payload Dictionary
                     Dictionary<String, String> payload = new Dictionary<string, string>();
-                    
+
                     // Iterate through column ids (properties) of csv 
                     // & map to current Device's telemetry at last known index.
-                    for (int i = 0; i< properties.Length; i++)
+                    for (int i = 0; i < properties.Length; i++)
                     {
                         payload.Add(properties[i], dataPoints[i]);
                     }
 
-                    // Create Connection String
-                    string[] stringComponents = { iotHub, deviceId, sasToken };
-                    string connectionString = string.Join(';', stringComponents);
+                    // Get Device Connection String from Keyvault
+                    var DeviceConnectionSecret = await vaultClient.GetSecretAsync(keyVaultUrl, device.RowKey);
+                    string deviceConnectionString = DeviceConnectionSecret.Value;
 
                     // Send the Device's Telemetry to IoT Central
-                    using (var deviceClient = DeviceClient.CreateFromConnectionString(connectionString, TransportType.Mqtt))
+                    using (var deviceClient = DeviceClient.CreateFromConnectionString(deviceConnectionString, TransportType.Mqtt))
                     {
                         // Convert Payload Dictionary to Json Object
                         var messageString = JsonConvert.SerializeObject(payload);
@@ -90,17 +104,19 @@ namespace Microsoft.Azure.IotCentral.Simulation
 
                     // Update Device's Last Known Index.
                     // If end of CSV file has been reached, reset to starting position.
-                    lastKnownIndex = lastKnownIndex+1 == rows.Length ? 1 : lastKnownIndex + 1;
+                    lastKnownIndex = lastKnownIndex + 1 == rows.Length ? 1 : lastKnownIndex + 1;
 
-                    SimulatedDeviceDetails updatedDevice = new SimulatedDeviceDetails(device.PartitionKey, device.RowKey)
+                    SimulatedDeviceDetails updatedDevice = new SimulatedDeviceDetails()
                     {
+                        PartitionKey = device.PartitionKey,
+                        RowKey = device.RowKey,
                         LastKnownRow = lastKnownIndex.ToString(),
                         SimulatedDataSource = device.SimulatedDataSource
                     };
 
                     // Update Table to set new last knownIndex for Device State
                     TableOperation updateDevice = TableOperation.InsertOrReplace(updatedDevice);
-                    table.Execute(updateDevice);
+                    await table.ExecuteAsync(updateDevice);
                 }
 
                 // Assign the new continuation token to tell the service where to
@@ -108,7 +124,7 @@ namespace Microsoft.Azure.IotCentral.Simulation
                 continuationToken = tableQueryResult.ContinuationToken;
 
             } while (continuationToken != null);
-            
+
         }
         public string GetCSVBlobData(string fileName)
         {
@@ -129,7 +145,10 @@ namespace Microsoft.Azure.IotCentral.Simulation
 
         public class SimulatedDeviceDetails : TableEntity
         {
-            // Inherits PartitionKey and RowKey from TableEntity
+            public new string PartitionKey { get; set; }
+
+            public new string RowKey { get; set; }
+
             public string SimulatedDataSource { get; set; }
 
             public string LastKnownRow { get; set; }
