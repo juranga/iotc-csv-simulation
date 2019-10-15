@@ -46,12 +46,7 @@ class Dps_Keygen(object):
         return None
 
     # python version of: https://github.com/Azure/dps-keygen/blob/master/dps.js
-    # TODO: Test the self.iot_hub on multiple devices.
     def generate_connection_string(self, device_id, scope_id, sas_key):
-        print('Generating connection string')
-        # If iot hub has been obtained or specified already, Connection String can be easily obtained
-        if not self.iot_hub == None:
-            return 'HostName={};DeviceId={};SharedAccessKey={}'.format(self.iot_hub, device_id, sas_key)
 
         # If iot hub identity has yet to be obtained, api calls to register & obtain the iot hub name are required
         # The logic code below is the dps-keygen logic
@@ -61,7 +56,6 @@ class Dps_Keygen(object):
             headers = resp[0]
             operation_id = resp[1] 
             # Loop waiting on Status of Device Provisioning
-            print('Registered Device on Hub')
             while True:
                 uri = 'https://global.azure-devices-provisioning.net/{}/registrations/{}/operations/{}?api-version={}'.format(scope_id, device_id, operation_id, api_version)
                 resp = requests.get(uri, headers=headers)
@@ -72,9 +66,16 @@ class Dps_Keygen(object):
                         self.iot_hub = data['assignedHub']
                         return 'HostName={};DeviceId={};SharedAccessKey={}'.format(self.iot_hub, device_id, sas_key)
                     elif data['status'] == 'assigning':
-                        time.sleep(1.5)
+                        # Assume Device will be assigned, therefore do not sleep for 1.2 seconds until next call.
+                        # This is done to scale the # of devices as desired, and not wait until each device is confirmed registered.
+                        # Otherwise, each device created will take 1 second.. therefore 60 devices = 1 minutes. 120 devices = 2 mins.. etc
+                        # Scale testing could suffer? TODO: Figure out what is preferred for this
+                        if not self.iot_hub == None:
+                            return 'HostName={};DeviceId={};SharedAccessKey={}'.format(self.iot_hub, device_id, sas_key)
+                        time.sleep(1.3)
                 # Failed Get Request
                 else:
+                    print("Generating Connection String failed.")
                     print(resp.content)
                     return None
         return None

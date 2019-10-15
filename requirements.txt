@@ -10,4 +10,5 @@ azure-storage-blob==2.1.0
 azure-storage-common==2.1.0
 azure-keyvault-secrets
 pandas
+xmltodict
 azure.storage.table 

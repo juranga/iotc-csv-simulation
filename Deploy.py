@@ -48,6 +48,7 @@ resource_group: str = default_params['resourceGroupName']['value']
 # These problems would be easy to fix with a UI.. TODO Potentially Rethink Config State
 iot_app_name: str = default_params['0']['subdomain']['value']
 keyvault_name: str = default_params['2']['keyVaultName']['value']
+azfn_name: str = default_params['2']['appServiceName']['value']
 
 # Get Template dir by joining current dir and Templates folder
 template_dir: str = os.path.join(current_dir, 'Templates')
@@ -79,7 +80,6 @@ SIM_DEVICES_PATH = os.path.join(current_dir, 'Data', 'SimulatedDevices.csv')
 # Azure Table is used for storing Device State
 ################################################################################################
 
-
 # Get Data Path Files & Storage Account Name
 config = load_json(CONFIG_PATH) # Reload Config to get storageAccountName
 storage_account: str = config['storageAccountName']
@@ -100,7 +100,7 @@ blob_deployer.upload_blobs_from_folder(folder=device_models_folder, container_na
 
 # Create Azure Table via Table Deployer Class
 table_deployer = Table_Deployer(name=storage_account, key=storage_keys['key1'])
-#table_deployer.create_table(table_name='devices')
+table_deployer.create_table(table_name='devices')
 
 
 ################################################################################################
@@ -123,7 +123,19 @@ device_deployer = Device_Deployer(azure_table_deployer=table_deployer, iot_centr
 device_deployer.create_simulated_devices()
 
 ################################################################################################
+# Final Step: Create & Upload the Azure Functions to the specified resource group that will
+# simulate all devices
+################################################################################################
+
+device_models: list = device_deployer.get_device_models()
+Azure_Function_Deployer = Azure_Function_Deployer(credentials, sitename= azfn_name, subscription_id=subscription_id, resource_group=resource_group)
+Azure_Function_Deployer.create_azure_functions(device_models)
+
+################################################################################################
 # Remove Cached Credentials from Interactive Login
 ################################################################################################
 #cached_credentials = os.path.join(os.path.expanduser('~'), '.azureml', 'auth')
 #shutil.rmtree(cached_credentials)
+
+print("Success! All resources required to have simulated csv data are up and running.")
+print("For next steps to upgrade or scale out to more devices, please follow the Extended Guide README')
