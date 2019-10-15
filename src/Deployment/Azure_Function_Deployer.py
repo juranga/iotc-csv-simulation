@@ -29,9 +29,7 @@ class Azure_Function_Deployer(object):
         for key in settings:
             azure_func_settings[key] = settings[key]
         client.web_apps.update_application_settings(self.resource_group, 'customsimazfn', properties=azure_func_settings)
-
-    # TODO: Add Function to Zip Deploy the Azure Functions Folder
-
+               
     def deploy_azure_functions(self):
         shutil.make_archive('functions', 'zip', AZURE_FUNCTIONS_PATH)
         print('Deploying Azure Function through Zip Deploy... This may take a couple of minutes.')
