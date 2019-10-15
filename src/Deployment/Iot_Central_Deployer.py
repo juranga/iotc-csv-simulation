@@ -12,6 +12,7 @@ import hashlib
 
 from src.Common.Functions import load_json, unix_time_millis
 from src.Common.Dps_Keygen import Dps_Keygen
+from collections import defaultdict
 
 class Iot_Central_Deployer(object): 
 
@@ -39,7 +40,7 @@ class Iot_Central_Deployer(object):
     # the interface id which is used to create new simulated devices.
     def get_existing_models(self):
         print('Checking Existing models...')
-        existing_models = {}
+        existing_models = defaultdict(dict)
         models_url = '{}/models/'.format(self.url)
         resp = requests.get(models_url, headers=self.header)
         if resp.status_code == 200 or resp.status_code == 202:
@@ -47,8 +48,24 @@ class Iot_Central_Deployer(object):
             for model in model_list:
                 # Saves the model name & the interface instance id.
                 # This is required for when creating new devices of this model
-                existing_models[model['displayName']]['id'] = model['implements']['@id']
+                existing_models[model['displayName']]['id'] = model['@id']
         return existing_models
+
+    # Deploys the models in the DeviceModels folder
+    def deploy_models(self, models_dir: str):
+        print('Deploying Models to IoT Central...')
+        models_url = self.url + 'models/' 
+        for model_file_name in os.listdir(models_dir):
+            model_file_path = os.path.join(os.getcwd(), 'deviceModels', model_file_name)
+            model = load_json(model_file_path)
+
+            # Check if model already exists in existing models
+            # If it does, skip deploying that model 
+            if model['displayName'] in self.existing_models.keys():
+                continue
+            resp = requests.post(models_url, headers=self.header, json=model)
+        # Reset the existing models to store modelDefinitions set by Iot Central
+        self.existing_models = self.get_existing_models()
 
     # Get Device Scope Id and Primary Key from IoT Central
     def get_device_connection_string(self, device_id: str):
@@ -67,37 +84,24 @@ class Iot_Central_Deployer(object):
         devices_url = '{}/devices/{}'.format(self.url, device_id)
         resp = requests.get(devices_url, headers=self.header)
         return resp.status_code == 200 or resp.status_code == 202
-        
-    # Deploys the models in the DeviceModels folder
-    def deploy_models(self, models_dir: str):
-        print('Deploying Models to IoT Central')
-        models_url = self.url + 'models/' 
-        for model_file_name in os.listdir(models_dir):
-            model_file_path = os.path.join(os.getcwd(), 'deviceModels', model_file_name)
-            model = load_json(model_file_path)
-
-            # Check if model already exists in existing models
-            # If it does, skip deploying that model 
-            if model['displayName'] in self.existing_models.keys():
-                continue
-            resp = requests.post(models_url, headers=self.header, json=model)
 
     # Returns True if Device Creation was Successful or Device already exists
     def deploy_device(self, device_id: str, device_model: str):
         devices_url = '{}/devices/'.format(self.url)
         if self.is_existing_device(device_id):
+            print("Skipping deployment of device {}, as it already exists.\n".format(device_id))
             return True
-
         # Instance of is obtained by parsing the Model's interface id
-        # Example: "urn:iotcentral:model" would give iotcentral in the code below
-        instance_of = self.existing_models[device_model]['id'].split(':')[1]
+        # Example: "urn:iotcentral:model" is expected
+        instance_of = self.existing_models[device_model]['id']
         device = {
                 '@type': 'Device',
                 'id': device_id,
                 'displayName': device_id,
-                'instanceOf': 'urn:{}:modelDefinition:{}'.format(instance_of, device_model),
+                'instanceOf': instance_of,
                 'simulated': False,
-                'approved': True
+                'approved': True,
+                'deviceId': device_id
             }
         resp = requests.post(devices_url, headers=self.header, json=device)
         return resp.status_code == 200 or resp.status_code == 201

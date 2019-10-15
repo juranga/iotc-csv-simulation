@@ -11,6 +11,7 @@ class Device_Deployer(object):
         self.azure_table_deployer = azure_table_deployer
         self.iot_central_deployer = iot_central_deployer
         self.key_vault_deployer = key_vault_deployer
+        self.device_models = []
         return
 
     # Creates the devices designated from the Simulated Devices csv file 
@@ -21,15 +22,18 @@ class Device_Deployer(object):
         id_count = 0
         for _, row in dataframe.iterrows():
             for n in range(0, int(row['NumberOfDevices'])):
+                model = row['DeviceModel']
+                if not model in self.device_models:
+                    self.device_models.append(model)
                 device_id = 'simulateddevice' + str(id_count)
                 entity = {
                     'PartitionKey': device_id,
-                    'RowKey': row['DeviceType'],
+                    'RowKey': model,
                     'LastKnownRow': 1,
                     'SimulatedDataSource': row['SimulatedDataSource']
                 }
                 # Check if device deployment to central is successful 
-                if self.iot_central_deployer.deploy_device(device_id= device_id, device_model= row['DeviceModel']):
+                if self.iot_central_deployer.deploy_device(device_id= device_id, device_model= model):
 
                     # Retrieve Connection String 
                     connection_string = self.iot_central_deployer.get_device_connection_string(device_id)
@@ -40,3 +44,7 @@ class Device_Deployer(object):
                     # Insert a Device Entity for Azure Table to store state of device
                     self.azure_table_deployer.insert_device_entity(entity)
                     id_count += 1
+
+
+    def get_device_models(self):
+        return self.device_models

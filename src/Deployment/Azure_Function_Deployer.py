@@ -4,22 +4,27 @@
 
 from azure.mgmt.web.web_site_management_client import WebSiteManagementClient
 import os
-from shutil import copy
+import shutil, requests, zipfile
+import json
 
+from src.Common.Functions import write_json
 from src.constants import AZURE_FUNCTIONS_PATH
+
 
 class Azure_Function_Deployer(object):
 
-    def __init__(self, credentials, subscription_id: str, resource_group: str):
+    def __init__(self, credentials, sitename: str, subscription_id: str, resource_group: str):
         self.credentials = credentials
         self.resource_group = resource_group
         self.subscription_id = subscription_id
+        self.sitename = sitename
 
     # Insert App Settings
     # This exists in the scenario where secrets are not desired to be kept in KeyVault
-    # Which is UNSAFE, but faster when simulating. 
     def insert_app_setting(self, settings):
         client = WebSiteManagementClient(self.credentials, self.subscription_id)
+        header = {'Authentication': 'Bearer ' + self.credentials._get_arm_token_using_interactive_auth("https://login.windows.net")}
+        client.get_publishing_user(headers=header)
         azure_func_settings = client.web_apps.list_application_settings(self.resource_group, 'customsimazfn')
         for key in settings:
             azure_func_settings[key] = settings[key]
@@ -27,15 +32,47 @@ class Azure_Function_Deployer(object):
 
     # TODO: Add Function to Zip Deploy the Azure Functions Folder
 
+    def deploy_azure_functions(self):
+        shutil.make_archive('functions', 'zip', AZURE_FUNCTIONS_PATH)
+        print('Deploying Azure Function through Zip Deploy... This may take a couple of minutes.')
+
+        # Authentication required for Zip Deploying to Azure Functions
+        # Zip Deploy does not authenticate the same was as the others. It requires
+        # getting the Publishing Profile username and password, which is difficult to do unless
+        # you do an xml hacky implementation.
+        # The following code parses the xml publishing profile & creates the authentication
+        import xmltodict
+        client = WebSiteManagementClient(self.credentials, self.subscription_id)
+        xml_publish_profile = client.web_apps.list_publishing_profile_xml_with_secrets(self.resource_group, self.sitename)
+        for data in xml_publish_profile:
+            json_publish_profile = xmltodict.parse(data)
+
+        publish_name = json_publish_profile['publishData']['publishProfile'][0]['@userName']
+        publish_psw = json_publish_profile['publishData']['publishProfile'][0]['@userPWD']
+    
+        # Creates the Headers for Authorization
+        headers = {
+            'Content-Type': 'application/octet-stream'
+        }
+
+        # Opens Zip File & sends the binary data via REST call to Azure Functions
+        zip_api_url = 'https://{}.scm.azurewebsites.net/api/zipdeploy'.format(self.sitename)
+        zipfile = open('./functions.zip', 'rb').read()
+        resp = requests.post(zip_api_url, headers=headers, data=zipfile, auth=(publish_name, publish_psw))
+
+        # Removes Zip File after deployment done
+        os.remove('./functions.zip')
+
     # Create Timer Trigger C# Azure Functions 
     # for each Device Model in list of device models.
     def create_azure_functions(self, device_models: list):
+        directories_to_remove = []
         for model in device_models:
+            function_name = '{}Simulator'.format(model)
             csharp_class = {
-                            '1': 'using Microsoft.Azure.IotCentral.Simulation;',
+                            '1': '',
                             '2': '',
-                            '3': '[FunctionName("{}Simulator")]'.format(model),
-                            '4': 'public static void Run([TimerTrigger("0 */10 * * * * ")]TimerInfo myTimer, ILogger log)',
+                            '4': 'public static void Run([TimerTrigger("0 */15 * * * * ")]TimerInfo myTimer)',
                             '5': '{',
                             '': {
                                 '6': 'CsvDeviceSimulator simulator = new CsvDeviceSimulator();',
@@ -43,17 +80,51 @@ class Azure_Function_Deployer(object):
                             },
                             '8': '}'
                         }
-            # Create the folder & populate with Azure Function dependencies
-            function_folder = os.path.join(AZURE_FUNCTIONS_PATH, model)
+
+            # Create a temporary Azure Function folder to populate with dependencies required
+            function_folder = os.path.join(AZURE_FUNCTIONS_PATH, function_name)
             if not os.path.exists(function_folder):
                 os.mkdir(function_folder)
-            copy('function.proj', function_folder)
+            shutil.copy(os.path.join(AZURE_FUNCTIONS_PATH,'function.proj'), function_folder)
+            self.create_function_dependencies(function_name, function_folder)
 
-            # Creat the Azure Function file and upload to corresponding folder
-            file = os.path.join(function_folder, model)
-            file = open('{}Simulator.cs'.format(file), 'w')
+            # Copy the CsvDeviceSimulator class & place it in to newly created Azure Function folder
+            template_simulator_path = os.path.join(AZURE_FUNCTIONS_PATH, 'CsvDeviceSimulator.cs')
+            shutil.copy(template_simulator_path, function_folder)
+
+            # Append the Azure Function Timer Trigger to the Simulator template class
+            # and rename the copied function class to 'run.csx' to work in Azure Functions
+            function_file = os.path.join(function_folder, 'CsvDeviceSimulator.cs')
+            renamed_file = os.path.join(function_folder, 'run.csx')
+            file = open(function_file, 'a')
             self.write_json_to_csharp(file, csharp_class)
             file.close()
+            
+            os.rename(function_file, renamed_file)
+            directories_to_remove.append(function_folder)
+
+        # Zip Deploy Azure Functions that were just created
+        self.deploy_azure_functions()
+        # Remove the Functions after deployment
+        for folder in directories_to_remove:
+            shutil.rmtree(folder)
+        
+    # Create the bindings required by every Azure Function 
+    def create_function_dependencies(self, function_name: str, file_path: str):
+        function_json_file = {
+            "bindings": [
+                {
+                    "authLevel": "function",
+                    "name": "myTimer",
+                    "type": "timerTrigger",
+                    "direction": "in",
+                    "schedule": "0 */15 * * * *"
+                }
+            ]
+        }
+        file_name = os.path.join(file_path, 'function.json')
+        write_json(file_name, function_json_file)
+
 
     # Naive way to create a Csharp Class from a json dictionary.
     # Recursively iterates through nested inner objects and
