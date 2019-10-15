@@ -137,5 +137,5 @@ Azure_Function_Deployer.create_azure_functions(device_models)
 #cached_credentials = os.path.join(os.path.expanduser('~'), '.azureml', 'auth')
 #shutil.rmtree(cached_credentials)
 
-print("Success! All resources required to have simulated csv data are up and running.")
-print("For next steps to upgrade or scale out to more devices, please follow the Extended Guide README')
+print('Success! All resources required to have simulated csv data are up and running.')
+print('For next steps to upgrade or scale out to more devices, please follow the Extended Guide README.')
