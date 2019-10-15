@@ -11,6 +11,9 @@
     "storageAccountName": {
       "type": "string"
     },
+    "keyVaultName": {
+      "type": "string"
+    },
     "location": {
       "type": "string"
     }
@@ -81,10 +84,6 @@
         "siteConfig": {
           "appSettings": [
             {
-              "name": "AzureStorageConnectionString",
-              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountName'),';AccountKey=',listKeys(variables('storageAccountId'),'2015-05-01-preview').key1)]"
-            },
-            {
               "name": "AzureWebJobsDashboard",
               "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountName'),';AccountKey=',listKeys(variables('storageAccountId'),'2015-05-01-preview').key1)]"
             },
@@ -93,8 +92,16 @@
               "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountName'),';AccountKey=',listKeys(variables('storageAccountId'),'2015-05-01-preview').key1)]"
             },
             {
+              "name": "StorageAccountName",
+              "value": "[parameters('storageAccountName')"
+            },
+            {
               "name": "FUNCTIONS_EXTENSION_VERSION",
               "value": "~2"
+            },
+            {
+              "name": "KeyVaultBaseUrl",
+              "value": "[concat('https://', parameters('keyVaultName'), '.vault.azure.net/')]"
             },
             {
               "name": "FUNCTIONS_WORKER_RUNTIME",
@@ -111,6 +118,36 @@
           ]
         }
       }
-    }
-  ]
-}
+    },
+    {
+        "type": "Microsoft.KeyVault/vaults",
+        "name": "[parameters('keyVaultName')]",
+        "location": "[parameters('location')]",
+        "apiVersion": "2016-10-01",
+        "properties": {
+          "enabledForDeployment": "true",
+          "enabledForTemplateDeployment": "true",
+          "enabledForVolumeEncryption": "false",
+          "tenantId": "[reference(concat('Microsoft.Web/sites/', parameters('appServiceName')), '2016-08-01', 'Full').identity.tenantId]",
+          "accessPolicies": [
+            {
+              "tenantId": "[reference(concat('Microsoft.Web/sites/', parameters('appServiceName')), '2016-08-01', 'Full').identity.tenantId]",
+              "objectId": "[reference(concat('Microsoft.Web/sites/', parameters('appServiceName')), '2016-08-01', 'Full').identity.principalId]",
+              "permissions": {
+                "secrets": [
+                  "all"
+                ]
+              }
+            }
+          ],
+          "sku": {
+            "name": "Standard",
+            "family": "A"
+          }
+        },
+        "dependsOn": [
+          "[resourceId('Microsoft.Web/sites', parameters('appServiceName'))]"
+        ]
+      }
+    ]
+  }

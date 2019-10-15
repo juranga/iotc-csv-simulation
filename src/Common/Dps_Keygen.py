@@ -48,10 +48,6 @@ class Dps_Keygen(object):
     # python version of: https://github.com/Azure/dps-keygen/blob/master/dps.js
     def generate_connection_string(self, device_id, scope_id, sas_key):
 
-        # If iot hub has been obtained or specified already, Connection String can be easily obtained
-        if not self.iot_hub == None:
-            return 'HostName={};DeviceId={};SharedAccessKey={}'.format(self.iot_hub, device_id, sas_key)
-
         # If iot hub identity has yet to be obtained, api calls to register & obtain the iot hub name are required
         # The logic code below is the dps-keygen logic
         api_version = '2018-11-01'
@@ -70,9 +66,16 @@ class Dps_Keygen(object):
                         self.iot_hub = data['assignedHub']
                         return 'HostName={};DeviceId={};SharedAccessKey={}'.format(self.iot_hub, device_id, sas_key)
                     elif data['status'] == 'assigning':
-                        time.sleep(5)
+                        # Assume Device will be assigned, therefore do not sleep for 1.2 seconds until next call.
+                        # This is done to scale the # of devices as desired, and not wait until each device is confirmed registered.
+                        # Otherwise, each device created will take 1 second.. therefore 60 devices = 1 minutes. 120 devices = 2 mins.. etc
+                        # Scale testing could suffer? TODO: Figure out what is preferred for this
+                        if not self.iot_hub == None:
+                            return 'HostName={};DeviceId={};SharedAccessKey={}'.format(self.iot_hub, device_id, sas_key)
+                        time.sleep(1.3)
                 # Failed Get Request
                 else:
+                    print("Generating Connection String failed.")
                     print(resp.content)
                     return None
         return None
