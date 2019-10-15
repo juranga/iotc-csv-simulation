@@ -12,6 +12,7 @@ Do note that by running this solution, the following resources will be created i
     * Blob Storage
     * Azure Table
 1. App Service Plan
+1. Keyvault
 1. Azure Functions
 
 If you already have any of the resources specified above, please follow the instructions in [Connecting Pre-Existing Azure Resources](#connecting-pre-existing-azure-resources).
