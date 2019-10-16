@@ -28,8 +28,9 @@ class Device_Deployer(object):
                     self.device_models.append(model)
                 device_id = 'simulateddevice' + str(id_count)
                 entity = {
-                    'PartitionKey': device_id,
-                    'RowKey': model,
+                    'PartitionKey': model,
+                    'RowKey': row['DeviceType'],
+                    'DeviceId': device_id,
                     'LastKnownRow': 1,
                     'SimulatedDataSource': row['SimulatedDataSource']
                 }

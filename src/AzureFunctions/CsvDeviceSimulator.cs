@@ -130,6 +130,7 @@ public class CsvDeviceSimulator
         {
             PartitionKey = device.PartitionKey,
             RowKey = device.RowKey,
+            DeviceId = device.DeviceId,
             LastKnownRow = device.LastKnownRow + 1 == dataSources[device.SimulatedDataSource]["rows"].Length ? 1 : device.LastKnownRow + 1,
             SimulatedDataSource = device.SimulatedDataSource
         };
@@ -141,7 +142,7 @@ public class CsvDeviceSimulator
 
     private async void sendPayloadToCentralAsync(Dictionary<string, string> payload, SimulatedDeviceDetails device)
     {
-        string deviceConnectionString = getSecretFromVault(device.RowKey);
+        string deviceConnectionString = getSecretFromVault(device.DeviceId);
 
         using (var deviceClient = DeviceClient.CreateFromConnectionString(deviceConnectionString, TransportType.Mqtt))
         {
@@ -161,6 +162,8 @@ public class CsvDeviceSimulator
         public new string PartitionKey { get; set; }
 
         public new string RowKey { get; set; }
+
+        public new string DeviceId { get; set; }
 
         public string SimulatedDataSource { get; set; }
 
