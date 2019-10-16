@@ -12,37 +12,39 @@ using System.Text;
 
 public class CsvDeviceSimulator
 {
-    private string storageAccountName;
     private string keyVaultUrl;
-    private Dictionary<String, String> dataSources;
     private string blobContainerName;
+    private Dictionary<string, Dictionary<string, string[]>> dataSources;
     private Microsoft.Azure.Storage.CloudStorageAccount blobStorageAccount;
     private Microsoft.WindowsAzure.Storage.CloudStorageAccount tableStorageAccount;
+    private KeyVaultClient vaultClient;
 
     public CsvDeviceSimulator()
     {
-        storageAccountName = Environment.GetEnvironmentVariable("StorageAccountName");
         keyVaultUrl = Environment.GetEnvironmentVariable("KeyVaultBaseUrl");
-        dataSources = new Dictionary<string, string>();
         blobContainerName = "simcsvfiles";
-    }
+        dataSources = new Dictionary<string, Dictionary<string, string[]>>();
 
-    public async void SendTelemetryDataOfType(string deviceModel)
-    {
         // Create KeyVault Client to fetch Connection String Secrets
         var tokenProvider = new AzureServiceTokenProvider();
         var authenticationCallback = new KeyVaultClient.AuthenticationCallback(tokenProvider.KeyVaultTokenCallback);
-        KeyVaultClient vaultClient = new KeyVaultClient(authenticationCallback);
+        vaultClient = new KeyVaultClient(authenticationCallback);
+    }
+    public async void SendTelemetryDataOfType(string deviceModel)
+    {
+
+        // Get Storage Connection Strings From Vault
+        string storageConnectionString = getSecretFromVault("StorageAccountConnectionString");
 
         // Create Clients for blob storage & table storage accounts from storage connection string
-        var AzureStorageSecret = await vaultClient.GetSecretAsync(keyVaultUrl, "StorageAccountConnectionString");
-        string storageConnectionString = AzureStorageSecret.Value;
         blobStorageAccount = Microsoft.Azure.Storage.CloudStorageAccount.Parse(storageConnectionString);
         tableStorageAccount = Microsoft.WindowsAzure.Storage.CloudStorageAccount.Parse(storageConnectionString);
 
         // Create Cloud Table Client to get the list of Devices of device model from Azure Table. 
         CloudTableClient tableClient = tableStorageAccount.CreateCloudTableClient();
         CloudTable table = tableClient.GetTableReference("devices");
+
+        // Create Query to get every device of specified Device Model
         var query = new TableQuery<SimulatedDeviceDetails>().Where(TableQuery.GenerateFilterCondition("PartitionKey",
                                                     QueryComparisons.Equal, deviceModel)
                                                     );
@@ -51,70 +53,25 @@ public class CsvDeviceSimulator
         do
         {
             var tableQueryResult = await table.ExecuteQuerySegmentedAsync(query, continuationToken);
-
             foreach (var device in tableQueryResult.Results)
             {
 
-                // If Simulated Data Source has not been loaded yet to dataSources dict, then load it & store it.
-                // This is done to cache the data sources so as to not continuously parse an entire csv file for each device
-                // that use the same csv file as a data source.
+                // If the csv file the device is reading from has not been loaded yet to dataSources dict, then we must load & store it.
+                // This is done to cache the data sources so as to not continuously call Blob Storage and parse an entire csv file on each loop
                 if (!dataSources.ContainsKey(device.SimulatedDataSource))
                 {
-                    dataSources.Add(device.SimulatedDataSource, GetCSVBlobData(device.SimulatedDataSource));
+                    string csvData = GetCSVBlobData(device.SimulatedDataSource);
+                    string[] rows = csvData.Split('\n');
+                    string[] properties = rows[0].Split(',');
+                    Dictionary<string, string[]> tempCsvDict = new Dictionary<string, string[]>();
+                    tempCsvDict.Add("rows", rows);
+                    tempCsvDict.Add("columns", properties);
+                    dataSources.Add(device.SimulatedDataSource, tempCsvDict);
                 }
 
-                // Get Device id
-                string deviceId = "DeviceId=" + device.RowKey;
-
-                // Get the Device's Last Known State.
-                int lastKnownIndex = Int32.Parse(device.LastKnownRow);
-                string csvData = dataSources[device.SimulatedDataSource];
-                string[] rows = csvData.Split('\n');
-                string[] properties = rows[0].Split(',');
-                string[] dataPoints = rows[lastKnownIndex].Split(',');
-
-                // Create the Payload Dictionary
-                Dictionary<String, String> payload = new Dictionary<string, string>();
-
-                // Iterate through column ids (properties) of csv 
-                // & map to current Device's telemetry at last known index.
-                for (int i = 0; i < properties.Length; i++)
-                {
-                    payload.Add(properties[i], dataPoints[i]);
-                }
-
-                // Get Device Connection String from Keyvault
-                var DeviceConnectionSecret = await vaultClient.GetSecretAsync(keyVaultUrl, device.RowKey);
-                string deviceConnectionString = DeviceConnectionSecret.Value;
-
-                // Send the Device's Telemetry to IoT Central
-                using (var deviceClient = DeviceClient.CreateFromConnectionString(deviceConnectionString, TransportType.Mqtt))
-                {
-                    // Convert Payload Dictionary to Json Object
-                    var messageString = JsonConvert.SerializeObject(payload);
-
-                    // Serialize object to expected Device Message
-                    var deviceMessage = new Message(Encoding.UTF8.GetBytes(messageString));
-
-                    // Send Message to IoT Hub
-                    deviceClient.SendEventAsync(deviceMessage, new CancellationToken()).Wait();
-                }
-
-                // Update Device's Last Known Index.
-                // If end of CSV file has been reached, reset to starting position.
-                lastKnownIndex = lastKnownIndex + 1 == rows.Length ? 1 : lastKnownIndex + 1;
-
-                SimulatedDeviceDetails updatedDevice = new SimulatedDeviceDetails()
-                {
-                    PartitionKey = device.PartitionKey,
-                    RowKey = device.RowKey,
-                    LastKnownRow = lastKnownIndex.ToString(),
-                    SimulatedDataSource = device.SimulatedDataSource
-                };
-
-                // Update Table to set new last knownIndex for Device State
-                TableOperation updateDevice = TableOperation.InsertOrReplace(updatedDevice);
-                await table.ExecuteAsync(updateDevice);
+                Dictionary<string, string> payload = createPayload(device);
+                sendPayloadToCentralAsync(payload, device);
+                updateDeviceAsync(device, table);
             }
 
             // Assign the new continuation token to tell the service where to
@@ -124,7 +81,7 @@ public class CsvDeviceSimulator
         } while (continuationToken != null);
 
     }
-    public string GetCSVBlobData(string fileName)
+    private string GetCSVBlobData(string fileName)
     {
         CloudBlobClient blobClient = blobStorageAccount.CreateCloudBlobClient();
         CloudBlobContainer container = blobClient.GetContainerReference(blobContainerName);
@@ -140,6 +97,64 @@ public class CsvDeviceSimulator
 
         return text;
     }
+    private string getSecretFromVault(string key)
+    {
+        var secret = vaultClient.GetSecretAsync(keyVaultUrl, key).GetAwaiter().GetResult();
+        return secret.Value.ToString();
+    }
+
+    private Dictionary<string,string> createPayload(SimulatedDeviceDetails device)
+    {
+
+        // Split Comma Separated Values  
+        string[] dataPoints = dataSources[device.SimulatedDataSource]["rows"][device.LastKnownRow].Split(',');
+        string[] properties = dataSources[device.SimulatedDataSource]["columns"];
+
+        // Create the Payload Dictionary
+        Dictionary<String, String> payload = new Dictionary<string, string>();
+
+        // Iterate through column ids of csv & map to current Device's telemetry
+        for (int i = 0; i < properties.Length; i++)
+        {
+            payload.Add(properties[i], dataPoints[i]);
+        }
+
+        return payload;
+    }
+
+    private async void updateDeviceAsync(SimulatedDeviceDetails device, CloudTable table)
+    {
+
+        // Updating device requires replacing the entity in the table
+        SimulatedDeviceDetails updatedDevice = new SimulatedDeviceDetails()
+        {
+            PartitionKey = device.PartitionKey,
+            RowKey = device.RowKey,
+            LastKnownRow = device.LastKnownRow + 1 == dataSources[device.SimulatedDataSource]["rows"].Length ? 1 : device.LastKnownRow + 1,
+            SimulatedDataSource = device.SimulatedDataSource
+        };
+
+        // Update Table to set new last knownIndex for Device State
+        TableOperation updateDeviceOperation = TableOperation.InsertOrReplace(updatedDevice);
+        await table.ExecuteAsync(updateDeviceOperation);
+    }
+
+    private async void sendPayloadToCentralAsync(Dictionary<string, string> payload, SimulatedDeviceDetails device)
+    {
+        string deviceConnectionString = getSecretFromVault(device.RowKey);
+
+        using (var deviceClient = DeviceClient.CreateFromConnectionString(deviceConnectionString, TransportType.Mqtt))
+        {
+            // Convert Payload Dictionary to Json Object
+            var messageString = JsonConvert.SerializeObject(payload);
+
+            // Serialize object to expected Device Message
+            var deviceMessage = new Message(Encoding.UTF8.GetBytes(messageString));
+
+            // Send Message to IoT Hub
+            deviceClient.SendEventAsync(deviceMessage, new CancellationToken()).Wait();
+        }
+    }
 
     public class SimulatedDeviceDetails : TableEntity
     {
@@ -149,6 +164,6 @@ public class CsvDeviceSimulator
 
         public string SimulatedDataSource { get; set; }
 
-        public string LastKnownRow { get; set; }
+        public int LastKnownRow { get; set; }
     }
 }
