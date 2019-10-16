@@ -21,7 +21,8 @@ class Device_Deployer(object):
         dataframe = pd.read_csv(SIM_DEVICES_PATH)
         id_count = 0
         for _, row in dataframe.iterrows():
-            for n in range(0, int(row['NumberOfDevices'])):
+            i = 0
+            while i < int(row['NumberOfDevices']):
                 model = row['DeviceModel']
                 if not model in self.device_models:
                     self.device_models.append(model)
@@ -43,8 +44,8 @@ class Device_Deployer(object):
 
                     # Insert a Device Entity for Azure Table to store state of device
                     self.azure_table_deployer.insert_device_entity(entity)
-                    id_count += 1
-
+                    i += 1
+                id_count +=1
 
     def get_device_models(self):
         return self.device_models
