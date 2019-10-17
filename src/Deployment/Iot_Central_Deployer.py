@@ -21,8 +21,8 @@ class Iot_Central_Deployer(object):
         self.app_domain_name = app_domain_name
         self.credentials = credentials
         self.api_version = 'preview'
-        self.url = 'https://{}.azureiotcentral-dev.com/api/{}'.format(self.app_domain_name, self.api_version)
-        self.auth_token = 'SharedAccessSignature sr=bd5de8a9-3bcb-4415-a75d-ebb5231d301a&sig=K43pzKcrAgafjXcZ%2BWU1mLGBx4jgN4g13sh8UeSpiqI%3D&skn=testingPrivateJerry&se=1602952228452'
+        self.url = 'https://{}.azureiotcentral.com/api/{}'.format(self.app_domain_name, self.api_version)
+        self.auth_token = self.get_auth_token()
         self.header = {
             'Authorization': self.auth_token,
             'Content-Type': 'application/json'
