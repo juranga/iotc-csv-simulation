@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import pandas as pd
+import uuid, sys
 
 
 class Device_Deployer(object):
@@ -14,19 +15,18 @@ class Device_Deployer(object):
         self.device_models = []
         return
 
-    # Creates the devices designated from the Simulated Devices csv file 
-    def create_simulated_devices(self):
-        from src.constants import SIM_DEVICES_PATH
+    # Creates the devices designated from the Simulated Devices csv file  & Deploys them to Resources
+    def deploy_simulated_devices(self, sim_devices_csv: str):
 
-        dataframe = pd.read_csv(SIM_DEVICES_PATH)
-        id_count = 0
+        dataframe = pd.read_csv(sim_devices_csv)
         for _, row in dataframe.iterrows():
             i = 0
+            break_retry = 1
             while i < int(row['NumberOfDevices']):
                 model = row['DeviceModel']
                 if not model in self.device_models:
                     self.device_models.append(model)
-                device_id = 'simulateddevice' + str(id_count)
+                device_id = str(uuid.uuid4().fields[-1])[:5] # Random first 5 digits of uuid
                 entity = {
                     'PartitionKey': model,
                     'RowKey': row['DeviceType'],
@@ -35,7 +35,7 @@ class Device_Deployer(object):
                     'SimulatedDataSource': row['SimulatedDataSource']
                 }
                 # Check if device deployment to central is successful 
-                if self.iot_central_deployer.deploy_device(device_id= device_id, device_model= model):
+                if self.iot_central_deployer.create_device(device_id= device_id, device_model= model):
 
                     # Retrieve Connection String 
                     connection_string = self.iot_central_deployer.get_device_connection_string(device_id)
@@ -46,7 +46,11 @@ class Device_Deployer(object):
                     # Insert a Device Entity for Azure Table to store state of device
                     self.azure_table_deployer.insert_device_entity(entity)
                     i += 1
-                id_count +=1
+                else:
+                    break_retry += 1
+                    if break_retry == 3:
+                        print('Something is wrong with Device Creation right now.. Please try deploying later.')
+                        sys.exit()
 
     def get_device_models(self):
         return self.device_models

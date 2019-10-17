@@ -32,6 +32,7 @@ public class CsvDeviceSimulator
     }
     public async void SendTelemetryDataOfType(string deviceModel)
     {
+        var watch = System.Diagnostics.Stopwatch.StartNew();
 
         // Get Storage Connection Strings From Vault
         string storageConnectionString = getSecretFromVault("StorageAccountConnectionString");
@@ -80,6 +81,8 @@ public class CsvDeviceSimulator
 
         } while (continuationToken != null);
 
+        watch.Stop();
+        Console.WriteLine(watch.ElapsedMilliseconds);
     }
     private string GetCSVBlobData(string fileName)
     {

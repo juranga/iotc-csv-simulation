@@ -21,10 +21,10 @@ class Iot_Central_Deployer(object):
         self.app_domain_name = app_domain_name
         self.credentials = credentials
         self.api_version = 'preview'
-        self.url = 'https://{}.azureiotcentral.com/api/{}'.format(self.app_domain_name, self.api_version)
-        self.auth_token = self.get_auth_token()
+        self.url = 'https://{}.azureiotcentral-dev.com/api/{}'.format(self.app_domain_name, self.api_version)
+        self.auth_token = 'SharedAccessSignature sr=bd5de8a9-3bcb-4415-a75d-ebb5231d301a&sig=K43pzKcrAgafjXcZ%2BWU1mLGBx4jgN4g13sh8UeSpiqI%3D&skn=testingPrivateJerry&se=1602952228452'
         self.header = {
-            'Authorization': 'Bearer ' + self.auth_token,
+            'Authorization': self.auth_token,
             'Content-Type': 'application/json'
         }
         self.existing_models = self.get_existing_models()
@@ -33,13 +33,13 @@ class Iot_Central_Deployer(object):
     def get_auth_token(self):
         central_url = 'https://apps.azureiotcentral.com'
         token = self.credentials._get_arm_token_using_interactive_auth(resource=central_url)
-        return token
+        return 'Bearer ' + token
 
     # Existing Models are stored as dictionary objects 
     # to easily check if a model already exists when deploying, and for ease of access to
     # the interface id which is used to create new simulated devices.
     def get_existing_models(self):
-        print('Checking Existing models...')
+        print('Getting Existing models...')
         existing_models = defaultdict(dict)
         models_url = '{}/models/'.format(self.url)
         resp = requests.get(models_url, headers=self.header)
@@ -54,9 +54,9 @@ class Iot_Central_Deployer(object):
     # Deploys the models in the DeviceModels folder
     def deploy_models(self, models_dir: str):
         print('Deploying Models to IoT Central...')
-        models_url = self.url + 'models/' 
+        models_url = '{}/models/'.format(self.url)
         for model_file_name in os.listdir(models_dir):
-            model_file_path = os.path.join(os.getcwd(), 'deviceModels', model_file_name)
+            model_file_path = os.path.join(models_dir, model_file_name)
             model = load_json(model_file_path)
 
             # Check if model already exists in existing models
@@ -86,11 +86,12 @@ class Iot_Central_Deployer(object):
         return resp.status_code == 200 or resp.status_code == 202
 
     # Returns True if Device Creation was Successful or Device already exists
-    def deploy_device(self, device_id: str, device_model: str):
+    def create_device(self, device_id: str, device_model: str):
+        print('Creating Device {}'.format(device_id))
         devices_url = '{}/devices/'.format(self.url)
         if self.is_existing_device(device_id):
             print("Skipping deployment of device {}, as it already exists.\n".format(device_id))
-            return True
+            return False
         # Instance of is obtained by parsing the Model's interface id
         # Example: "urn:iotcentral:model" is expected
         instance_of = self.existing_models[device_model]['id']

@@ -10,7 +10,7 @@ import os, sys, shutil
 # Prevent local Pycache files from being stored 
 sys.dont_write_bytecode = True 
 
-from src.constants import CONFIG_PATH, SIM_DEVICES_PATH
+from src.constants import CONFIG_PATH
 from src.Deployment.ARM_Deployer import ARM_Deployer
 from src.Deployment.Blob_Deployer import Blob_Deployer
 from src.Deployment.Table_Deployer import Table_Deployer
@@ -70,10 +70,6 @@ if not has_ARM_deployed:
     arm_deployer.deploy_all()
     config['deployed'] = True
     write_to_config(config)
-    
-# SimulateDevices.csv needs to be discoverable by Device Deployer to know how many devices to create.
-# Therefore SIM_DEVICES_PATH global is updated here, since the ARM deployment has succeeded. 
-SIM_DEVICES_PATH = os.path.join(current_dir, 'Data', 'SimulatedDevices.csv')
 
 ################################################################################################
 # Obtain Storage Account Credentials & Deploy Blob CSV Files, Containers, & Azure Table
@@ -119,8 +115,9 @@ key_vault_deployer = Keyvault_Deployer(credentials, subscription_id, resource_gr
 central_deployer.deploy_models(models_dir=device_models_folder)
 
 # Create Deployer class for Devices & Create simulated Devices in Central
+simulate_devices_path = os.path.join(current_dir, 'Data', 'SimulateDevices.csv')
 device_deployer = Device_Deployer(azure_table_deployer=table_deployer, iot_central_deployer=central_deployer, key_vault_deployer=key_vault_deployer)
-device_deployer.create_simulated_devices()
+device_deployer.deploy_simulated_devices(simulate_devices_path)
 
 ################################################################################################
 # Final Step: Create & Upload the Azure Functions to the specified resource group that will

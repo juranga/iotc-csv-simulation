@@ -74,7 +74,6 @@
         ],
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
         "reserved": false,
-        "scmSiteAlsoStopped": false,
         "clientAffinityEnabled": false,
         "clientCertEnabled": false,
         "hostNamesDisabled": false,
@@ -125,8 +124,8 @@
         "location": "[parameters('location')]",
         "apiVersion": "2016-10-01",
         "properties": {
-          "enabledForDeployment": "true",
-          "enabledForTemplateDeployment": "true",
+          "enabledForDeployment": true,
+          "enabledForTemplateDeployment": true,
           "enabledForVolumeEncryption": "false",
           "tenantId": "[reference(concat('Microsoft.Web/sites/', parameters('appServiceName')), '2016-08-01', 'Full').identity.tenantId]",
           "accessPolicies": [
@@ -135,13 +134,13 @@
               "objectId": "[reference(concat('Microsoft.Web/sites/', parameters('appServiceName')), '2016-08-01', 'Full').identity.principalId]",
               "permissions": {
                 "secrets": [
-                  "all"
+                  "get"
                 ]
               }
             }
           ],
           "sku": {
-            "name": "Standard",
+            "name": "standard",
             "family": "A"
           }
         },

@@ -25,10 +25,10 @@ class Azure_Function_Deployer(object):
         client = WebSiteManagementClient(self.credentials, self.subscription_id)
         header = {'Authentication': 'Bearer ' + self.credentials._get_arm_token_using_interactive_auth("https://login.windows.net")}
         client.get_publishing_user(headers=header)
-        azure_func_settings = client.web_apps.list_application_settings(self.resource_group, 'customsimazfn')
+        azure_func_settings = client.web_apps.list_application_settings(self.resource_group, self.sitename)
         for key in settings:
             azure_func_settings[key] = settings[key]
-        client.web_apps.update_application_settings(self.resource_group, 'customsimazfn', properties=azure_func_settings)
+        client.web_apps.update_application_settings(self.resource_group, self.sitename, properties=azure_func_settings)
                
     def deploy_azure_functions(self):
         shutil.make_archive('functions', 'zip', AZURE_FUNCTIONS_PATH)
