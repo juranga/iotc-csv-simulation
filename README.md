@@ -39,7 +39,7 @@ All resources will be deployed in to a resource group titled **iotcustomsimulati
 
 Any pre-existing Azure Resource that you would like to reuse can be easily specified by navigating to the `default.params.json` file under the *Templates* folder in the current directory. 
 In this file, you can edit any of the sections shown below to map them to your pre-existing resources. It is important that you do not change the numbering in these parameters, as that will provision the resources incorrectly.
-If the resource already exists, please change the names to match those for which already exist, and change the value of "exists" in purple to `true`.
+If the resource already exists, please change the names to match those that already exist, and change the value of "exists" in purple to `true`.
 ![Default Param setting](Images/defaultparams.png)
 
 #### Pre-existing IoT Central Application Administration
