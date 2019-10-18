@@ -42,11 +42,23 @@ In this file, you can edit any of the sections shown below to map them to your p
 If the resource already exists, please change the names to match those for which already exist, and change the value of "exists" in purple to `true`.
 ![Default Param setting](Images/defaultparams.png)
 
+#### Pre-existing IoT Central Application Administration
+
+Read this section only if these 2 things apply to you:
+1. NOT the owner of the subscription for which the IoT Central Application lives 
+2. NOT have been granted access to the IoT Central Application for which you wish to provision the devices to.
+
+It is required that you are, or have been added as, a *Builder* or *Administrator* to the IoT Central Application to successfully call the APIs required to build the simulated devices.
+This can be achieved by navigating to the [iot central app instance](https://apps.azureiotcentral.com/), expanding the *Administration* tab, and checking the Users section.
+If you can, add yourself as a New User and give your account the *Builder* role. If you cannot add yourself, ask your administrators to add you instead.
+![Central Administration](Images/administration.png)
+
+
 #### Plugging in your own csv files 
 Customizing this solution requires the following actions:
 1. Drop any device data csv files in to the *DeviceData* folder found under the *Data* folder in the current directory. 
-1. Drop any device model files in to the *DeviceModels* folder found under the *Data* folder in the current directory.
-1. Edit the `SimulateDevices.csv` file found under the *Data* folder in the current directory to define your device simulation requirements.
+2. Drop any device model files in to the *DeviceModels* folder found under the *Data* folder in the current directory.
+3. Edit the `SimulateDevices.csv` file found under the *Data* folder in the current directory to define your device simulation requirements.
    * Following the already-provided data in this csv file will make this part a lot easier.
    
 
@@ -55,7 +67,7 @@ If you would like to simulate more than 10,000 devices for scale tests please co
 
 That's it! You're ready for deployment.
 
-### Deploying 
+## Deploying 
 
 After the above requirements have been met, open your favorite shell and run the following commands:
 Note, this may take a long time as it is installing dependencies the project needs & deploying Azure resources.

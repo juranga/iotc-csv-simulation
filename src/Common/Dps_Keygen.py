@@ -73,6 +73,9 @@ class Dps_Keygen(object):
                         if not self.iot_hub == None:
                             return 'HostName={};DeviceId={};SharedAccessKey={}'.format(self.iot_hub, device_id, sas_key)
                         time.sleep(1.3)
+                    elif data['status'] == 'failed':
+                        print('Authenticating device {} has failed. Skipping its deployment.'.format(device_id))
+                        return 
                 # Failed Get Request
                 else:
                     print("Generating Connection String failed.")
