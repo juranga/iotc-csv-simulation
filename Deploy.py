@@ -25,7 +25,7 @@ from src.Common.Functions import load_json, write_to_config
 ################################################################################################
 
 # Subscription is obtained from azure portal. Ask management if you do not know which id to use.
-subscription_id: str = '1c9175b7-2bb8-4804-9de8-72f90b69f9cb' if len(sys.argv) < 2 else sys.argv[1]
+subscription_id: str = '' if len(sys.argv) < 2 else sys.argv[1]
 
 ################################################################################################
 # Obtain Credentials via Interactive Login & Deploy Azure Resources
