@@ -24,21 +24,16 @@ class Azure_Function_Deployer(object):
     def insert_app_setting(self, settings):
         client = WebSiteManagementClient(self.credentials, self.subscription_id)
         header = {'Authentication': 'Bearer ' + self.credentials._get_arm_token_using_interactive_auth("https://login.windows.net")}
-        client.get_publishing_user(headers=header)
         azure_func_settings = client.web_apps.list_application_settings(self.resource_group, self.sitename)
         for key in settings:
             azure_func_settings[key] = settings[key]
         client.web_apps.update_application_settings(self.resource_group, self.sitename, properties=azure_func_settings)
                
-    def deploy_azure_functions(self):
-        shutil.make_archive('functions', 'zip', AZURE_FUNCTIONS_PATH)
-        print('Deploying Azure Function through Zip Deploy... This may take a couple of minutes.')
-
-        # Authentication required for Zip Deploying to Azure Functions
-        # Zip Deploy does not authenticate the same was as the others. It requires
-        # getting the Publishing Profile username and password, which is difficult to do unless
-        # you do an xml hacky implementation.
-        # The following code parses the xml publishing profile & creates the authentication
+    # Authentication required for Zip Deploying to Azure Functions
+    # Zip Deploy does not authenticate with bearer tokens. It requires
+    # getting the Publishing Profile username and password, which is difficult to obtain unless
+    # you do an xml hack. The following code parses the xml publishing profile & creates the authentication
+    def authenticate_to_zipdeploy(self):
         import xmltodict
         client = WebSiteManagementClient(self.credentials, self.subscription_id)
         xml_publish_profile = client.web_apps.list_publishing_profile_xml_with_secrets(self.resource_group, self.sitename)
@@ -47,7 +42,13 @@ class Azure_Function_Deployer(object):
 
         publish_name = json_publish_profile['publishData']['publishProfile'][0]['@userName']
         publish_psw = json_publish_profile['publishData']['publishProfile'][0]['@userPWD']
-    
+
+        return (publish_name, publish_psw)
+
+    def deploy_azure_functions(self):
+        shutil.make_archive('functions', 'zip', AZURE_FUNCTIONS_PATH)
+        print('Deploying Azure Function through Zip Deploy... This may take a couple of minutes.')
+  
         # Creates the Headers for Authorization
         headers = {
             'Content-Type': 'application/octet-stream'
@@ -56,7 +57,7 @@ class Azure_Function_Deployer(object):
         # Opens Zip File & sends the binary data via REST call to Azure Functions
         zip_api_url = 'https://{}.scm.azurewebsites.net/api/zipdeploy'.format(self.sitename)
         zipfile = open('./functions.zip', 'rb').read()
-        resp = requests.post(zip_api_url, headers=headers, data=zipfile, auth=(publish_name, publish_psw))
+        resp = requests.post(zip_api_url, headers=headers, data=zipfile, auth=self.authenticate_to_zipdeploy())
 
         # Removes Zip File after deployment done
         os.remove('./functions.zip')

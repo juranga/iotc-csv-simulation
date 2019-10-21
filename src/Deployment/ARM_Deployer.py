@@ -4,11 +4,12 @@
 
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.resource.resources.models import DeploymentMode
+from azureml._base_sdk_common.common import fetch_tenantid_from_aad_token
 import os
 import sys
 import json
 
-from src.Common.Functions import load_json, psw_generator, write_to_config
+from src.Common.Functions import load_json, psw_generator, write_to_config, get_object_id
 
 # ARM Deployment class that uses Template/Parameter files to deploy to a resource group in a given subscription
 
@@ -18,7 +19,7 @@ class ARM_Deployer(object):
     def __init__(self, credentials, subscription_id: str,
                  template_dir: str, resource_group: str = None,
                  location: str = 'westus'):
-
+        self.credentials = credentials
         self.subscription_id: str = subscription_id
         self.client = ResourceManagementClient(credentials, subscription_id)
         self.template_dir: str = template_dir
@@ -73,6 +74,15 @@ class ARM_Deployer(object):
                 write_to_config({
                     'storageAccountName': parameters[key]['value']
                 })
+
+            # Programatically include tenant id & object id from user creating the resources.
+            if key == 'tenantId':
+                token = self.credentials._get_arm_token()
+                parameters[key]['value'] = fetch_tenantid_from_aad_token(token)
+            if key == 'objectId':
+                client_id = 'https://vault.azure.net'
+                token = self.credentials._get_arm_token_using_interactive_auth(resource=client_id)
+                parameters[key]['value'] = get_object_id(token)
 
             # If Template param requires a password, make sure it adheres to Guid format
             key = key.lower()

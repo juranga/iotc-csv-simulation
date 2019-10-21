@@ -8,6 +8,7 @@ import datetime
 import json
 import os
 import uuid
+import jwt
 
 from src.constants import CONFIG_PATH
 
@@ -34,3 +35,6 @@ def unix_time_millis(dt):
     epoch = datetime.datetime.utcfromtimestamp(0)
     return (dt - epoch).total_seconds() * 1000.0
 
+def get_object_id(token):
+    decode_json = jwt.decode(token, verify=False)
+    return decode_json['oid']

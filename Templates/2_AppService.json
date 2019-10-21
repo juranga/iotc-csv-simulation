@@ -16,6 +16,12 @@
     },
     "location": {
       "type": "string"
+    },
+    "tenantId": {
+      "type": "string"
+    },
+    "objectId": {
+      "type": "string"
     }
   },
   "variables": {
@@ -127,14 +133,25 @@
           "enabledForDeployment": true,
           "enabledForTemplateDeployment": true,
           "enabledForVolumeEncryption": "false",
-          "tenantId": "[reference(concat('Microsoft.Web/sites/', parameters('appServiceName')), '2016-08-01', 'Full').identity.tenantId]",
+          "tenantId": "[parameters('tenantId')]",
           "accessPolicies": [
             {
               "tenantId": "[reference(concat('Microsoft.Web/sites/', parameters('appServiceName')), '2016-08-01', 'Full').identity.tenantId]",
               "objectId": "[reference(concat('Microsoft.Web/sites/', parameters('appServiceName')), '2016-08-01', 'Full').identity.principalId]",
               "permissions": {
                 "secrets": [
-                  "get"
+                  "get",
+                  "set",
+                  "list"
+                ]
+              }
+            },
+            {
+              "tenantId": "[parameters('tenantId')]",
+              "objectId": "[parameters('objectId')]",
+              "permissions": {
+                "secrets": [
+                  "all"
                 ]
               }
             }

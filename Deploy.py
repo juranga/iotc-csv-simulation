@@ -25,7 +25,7 @@ from src.Common.Functions import load_json, write_to_config
 ################################################################################################
 
 # Subscription is obtained from azure portal. Ask management if you do not know which id to use.
-subscription_id: str = '' if len(sys.argv) < 2 else sys.argv[1]
+subscription_id: str = '1c9175b7-2bb8-4804-9de8-72f90b69f9cb' if len(sys.argv) < 2 else sys.argv[1]
 
 ################################################################################################
 # Obtain Credentials via Interactive Login & Deploy Azure Resources
@@ -47,8 +47,8 @@ resource_group: str = default_params['resourceGroupName']['value']
 # Getting this info currently is hard coded and error prone. 
 # These problems would be easy to fix with a UI.. TODO Potentially Rethink Config State
 iot_app_name: str = default_params['0']['subdomain']['value']
-keyvault_name: str = default_params['2']['keyVaultName']['value']
 azfn_name: str = default_params['2']['appServiceName']['value']
+keyvault_name: str = default_params['2']['keyVaultName']['value']
 
 # Get Template dir by joining current dir and Templates folder
 template_dir: str = os.path.join(current_dir, 'Templates')

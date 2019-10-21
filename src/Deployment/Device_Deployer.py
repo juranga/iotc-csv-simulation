@@ -26,7 +26,9 @@ class Device_Deployer(object):
                 model = row['DeviceModel']
                 if not model in self.device_models:
                     self.device_models.append(model)
-                device_id = str(uuid.uuid4().fields[-1])[:5] # Random first 5 digits of uuid
+                first_half = str(uuid.uuid4().fields[-1])[:5]
+                second_half = str(uuid.uuid4().fields[-1])[:5]
+                device_id = 'device'+first_half+second_half
                 entity = {
                     'PartitionKey': model,
                     'RowKey': row['DeviceType'],
