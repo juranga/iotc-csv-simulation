@@ -71,7 +71,7 @@ class Azure_Function_Deployer(object):
             csharp_class = {
                             '1': '',
                             '2': '',
-                            '4': 'public static void Run([TimerTrigger("0 */15 * * * * ")]TimerInfo myTimer)',
+                            '4': 'public static void Run([TimerTrigger("0 */5 * * * * ")]TimerInfo myTimer)',
                             '5': '{',
                             '': {
                                 '6': 'CsvDeviceSimulator simulator = new CsvDeviceSimulator();',

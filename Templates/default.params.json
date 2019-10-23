@@ -11,7 +11,7 @@
       "value": "customsimiota"
     },
     "subdomain": {
-      "value": "testing123.flash"
+      "value": "csvtesting.flash"
     },
     "exists": true
   },
@@ -20,21 +20,15 @@
     "accountName": {
       "value": "customsimsa"
     },
-    "exists": true
+    "exists": false
   },
   "2": {
     "deploymentName": "App Service",
     "storageAccountName": {
       "value": "customsimsa"
     },
-    "appServiceName": {
-      "value": "customsimazfn"
-    },
     "appServicePlanName": {
       "value": "customsimasp"
-    },
-    "keyVaultName": {
-      "value": "customsimkv"
     },
     "tenantId": {
       "value": ""

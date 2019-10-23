@@ -32,8 +32,6 @@ public class CsvDeviceSimulator
     }
     public async void SendTelemetryDataOfType(string deviceModel)
     {
-        var watch = System.Diagnostics.Stopwatch.StartNew();
-
         // Get Storage Connection Strings From Vault
         string storageConnectionString = getSecretFromVault("StorageAccountConnectionString");
 
@@ -44,16 +42,17 @@ public class CsvDeviceSimulator
         // Create Cloud Table Client to get the list of Devices of device model from Azure Table. 
         CloudTableClient tableClient = tableStorageAccount.CreateCloudTableClient();
         CloudTable table = tableClient.GetTableReference("devices");
+        Console.WriteLine(table.ToString());
 
         // Create Query to get every device of specified Device Model
         var query = new TableQuery<SimulatedDeviceDetails>().Where(TableQuery.GenerateFilterCondition("PartitionKey",
                                                     QueryComparisons.Equal, deviceModel)
                                                     );
 
-        var continuationToken = default(TableContinuationToken);
+        TableContinuationToken continuationToken = default(TableContinuationToken);
         do
         {
-            var tableQueryResult = await table.ExecuteQuerySegmentedAsync(query, continuationToken);
+            var tableQueryResult = table.ExecuteQuerySegmentedAsync(query, continuationToken).GetAwaiter().GetResult();
             foreach (var device in tableQueryResult.Results)
             {
 
@@ -71,7 +70,7 @@ public class CsvDeviceSimulator
                 }
 
                 Dictionary<string, string> payload = createPayload(device);
-                sendPayloadToCentralAsync(payload, device);
+                SendPayloadToCentral(payload, device);
                 updateDeviceAsync(device, table);
             }
 
@@ -80,9 +79,6 @@ public class CsvDeviceSimulator
             continuationToken = tableQueryResult.ContinuationToken;
 
         } while (continuationToken != null);
-
-        watch.Stop();
-        Console.WriteLine(watch.ElapsedMilliseconds);
     }
     private string GetCSVBlobData(string fileName)
     {
@@ -106,7 +102,7 @@ public class CsvDeviceSimulator
         return secret.Value.ToString();
     }
 
-    private Dictionary<string,string> createPayload(SimulatedDeviceDetails device)
+    private Dictionary<string, string> createPayload(SimulatedDeviceDetails device)
     {
 
         // Split Comma Separated Values  
@@ -133,7 +129,7 @@ public class CsvDeviceSimulator
         {
             PartitionKey = device.PartitionKey,
             RowKey = device.RowKey,
-            DeviceId = device.DeviceId,
+            DeviceType = device.DeviceType,
             LastKnownRow = device.LastKnownRow + 1 == dataSources[device.SimulatedDataSource]["rows"].Length ? 1 : device.LastKnownRow + 1,
             SimulatedDataSource = device.SimulatedDataSource
         };
@@ -143,9 +139,9 @@ public class CsvDeviceSimulator
         await table.ExecuteAsync(updateDeviceOperation);
     }
 
-    private async void sendPayloadToCentralAsync(Dictionary<string, string> payload, SimulatedDeviceDetails device)
+    private async void SendPayloadToCentral(Dictionary<string, string> payload, SimulatedDeviceDetails device)
     {
-        string deviceConnectionString = getSecretFromVault(device.DeviceId);
+        string deviceConnectionString = getSecretFromVault(device.RowKey);
 
         using (var deviceClient = DeviceClient.CreateFromConnectionString(deviceConnectionString, TransportType.Mqtt))
         {
@@ -162,11 +158,8 @@ public class CsvDeviceSimulator
 
     public class SimulatedDeviceDetails : TableEntity
     {
-        public new string PartitionKey { get; set; }
 
-        public new string RowKey { get; set; }
-
-        public new string DeviceId { get; set; }
+        public string DeviceType { get; set; }
 
         public string SimulatedDataSource { get; set; }
 

@@ -109,5 +109,4 @@ class Iot_Central_Deployer(object):
             'approved': True,
         }
         resp = requests.put(devices_url, headers=self.header, json=device)
-        print(resp.content)
         return resp.status_code == 200 or resp.status_code == 201

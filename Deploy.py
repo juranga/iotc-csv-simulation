@@ -47,8 +47,6 @@ resource_group: str = default_params['resourceGroupName']['value']
 # Getting this info currently is hard coded and error prone. 
 # These problems would be easy to fix with a UI.. TODO Potentially Rethink Config State
 iot_app_name: str = default_params['0']['subdomain']['value']
-azfn_name: str = default_params['2']['appServiceName']['value']
-keyvault_name: str = default_params['2']['keyVaultName']['value']
 
 # Get Template dir by joining current dir and Templates folder
 template_dir: str = os.path.join(current_dir, 'Templates')
@@ -58,8 +56,8 @@ credentials = InteractiveLoginAuthentication(force=False, tenant_id=None)
 
 # Create Deployer class for ARM resources
 arm_deployer = ARM_Deployer(credentials= credentials, subscription_id = subscription_id,
-                              resource_group= resource_group, template_dir= template_dir,
-                              location= location)
+                            resource_group= resource_group, template_dir= template_dir,
+                            location= location)
 
 
 # Deploy Azure Resources & Update config file.
@@ -70,6 +68,11 @@ if not has_ARM_deployed:
     arm_deployer.deploy_all()
     config['deployed'] = True
     write_to_config(config)
+
+# Reload config to obtain keyvault & Azure Function state
+config = load_json(CONFIG_PATH)
+keyvault_name = config['keyvault']
+azfn_name = config['azfn']
 
 ################################################################################################
 # Obtain Storage Account Credentials & Deploy Blob CSV Files, Containers, & Azure Table
@@ -100,16 +103,18 @@ table_deployer.create_table(table_name='devices')
 
 
 ################################################################################################
-# Deploy Devices to IoT Central. Since Azure Table is dependent on Devices existing, Central &
-# the Azure Table need to be in sync and therefore a Device Deployer class handles orchestration
-# of both.
-# Additionally, a Keyvault deployer is required to store the connection strings of each new 
-# device in order for the Azure Function to authenticate as that device & send telemetry.
+# Deploy Devices to IoT Central, Device state to Azure Table, and Device Connection Strings
+# To Azure KeyVault.
+# Connection strings are needed for Azure Function to authenticate as device & send telemetry.
 ################################################################################################
 
 # Create Keyvault and IoT Central Deployers 
 central_deployer = Iot_Central_Deployer(credentials, app_domain_name=iot_app_name)
 key_vault_deployer = Keyvault_Deployer(credentials, subscription_id, resource_group, keyvault_name)
+
+# Insert Storage Connection string to Keyvault, as Azure Function requires it.
+storage_connection_string = 'DefaultEndpointsProtocol=https;AccountName={};AccountKey={};EndpointSuffix=core.windows.net'.format(storage_account, storage_keys['key1'])
+key_vault_deployer.insert_secret('StorageAccountConnectionString', storage_connection_string)
 
 # Deploy Models in DeviceModels folder
 central_deployer.deploy_models(models_dir=device_models_folder)

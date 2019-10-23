@@ -23,7 +23,7 @@
                             "displayName": "PowerAmountKW",
                             "name": "PowerAmountKW",
                             "schema": "double",
-                            "unit": "kW",
+                            "unit": null,
                             "displayUnit": "kW"
                         }
                     ]

@@ -23,7 +23,7 @@
                             "displayName": "EnergyAmountkWh",
                             "name": "EnergyAmountkWh",
                             "schema": "double",
-                            "unit": "kWh",
+                            "unit": null,
                             "displayUnit": "kWh"
                         }
                     ]

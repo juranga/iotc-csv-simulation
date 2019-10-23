@@ -23,7 +23,7 @@
                             "displayName": "MarginalCO2Intensity_gCO2kWh",
                             "name": "MarginalCO2Intensity_gCO2kWh",
                             "schema": "double",
-                            "unit": "gCO2kWh",
+                            "unit": null,
                             "displayUnit": "gCO2kWh"
                         },
                         {
@@ -32,7 +32,7 @@
                             "displayName": "SystemWideCO2Intensity_gCO2kWh",
                             "name": "SystemWideCO2Intensity_gCO2kWh",
                             "schema": "double",
-                            "unit": "gCO2kWh",
+                            "unit": null,
                             "displayUnit": "gCO2kWh"
                         }
                     ]

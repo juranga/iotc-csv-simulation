@@ -38,3 +38,8 @@ def unix_time_millis(dt):
 def get_object_id(token):
     decode_json = jwt.decode(token, verify=False)
     return decode_json['oid']
+
+def get_unique_resource_id(resource):
+    first_half = str(uuid.uuid4().fields[-1])[:5]
+    second_half = str(uuid.uuid4().fields[-1])[:5]
+    return resource + first_half + second_half

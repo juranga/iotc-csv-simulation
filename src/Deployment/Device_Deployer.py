@@ -5,6 +5,7 @@
 import pandas as pd
 import uuid, sys
 
+from src.Common.Functions import get_unique_resource_id
 
 class Device_Deployer(object):
 
@@ -26,13 +27,11 @@ class Device_Deployer(object):
                 model = row['DeviceModel']
                 if not model in self.device_models:
                     self.device_models.append(model)
-                first_half = str(uuid.uuid4().fields[-1])[:5]
-                second_half = str(uuid.uuid4().fields[-1])[:5]
-                device_id = 'device'+first_half+second_half
+                device_id = get_unique_resource_id('device')
                 entity = {
                     'PartitionKey': model,
-                    'RowKey': row['DeviceType'],
-                    'DeviceId': device_id,
+                    'RowKey': device_id,
+                    'DeviceType': row['DeviceType'],
                     'LastKnownRow': 1,
                     'SimulatedDataSource': row['SimulatedDataSource']
                 }

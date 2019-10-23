@@ -98,7 +98,7 @@
             },
             {
               "name": "StorageAccountName",
-              "value": "[parameters('storageAccountName')"
+              "value": "[parameters('storageAccountName')]"
             },
             {
               "name": "FUNCTIONS_EXTENSION_VERSION",
@@ -125,45 +125,50 @@
       }
     },
     {
-        "type": "Microsoft.KeyVault/vaults",
-        "name": "[parameters('keyVaultName')]",
-        "location": "[parameters('location')]",
-        "apiVersion": "2016-10-01",
-        "properties": {
-          "enabledForDeployment": true,
-          "enabledForTemplateDeployment": true,
-          "enabledForVolumeEncryption": "false",
-          "tenantId": "[parameters('tenantId')]",
-          "accessPolicies": [
-            {
-              "tenantId": "[reference(concat('Microsoft.Web/sites/', parameters('appServiceName')), '2016-08-01', 'Full').identity.tenantId]",
-              "objectId": "[reference(concat('Microsoft.Web/sites/', parameters('appServiceName')), '2016-08-01', 'Full').identity.principalId]",
-              "permissions": {
-                "secrets": [
-                  "get",
-                  "set",
-                  "list"
-                ]
-              }
-            },
-            {
-              "tenantId": "[parameters('tenantId')]",
-              "objectId": "[parameters('objectId')]",
-              "permissions": {
-                "secrets": [
-                  "all"
-                ]
-              }
+      "type": "Microsoft.KeyVault/vaults",
+      "name": "[parameters('keyVaultName')]",
+      "location": "[parameters('location')]",
+      "apiVersion": "2016-10-01",
+      "properties": {
+        "enabledForDeployment": true,
+        "enabledForTemplateDeployment": true,
+        "enabledForVolumeEncryption": "false",
+        "tenantId": "[parameters('tenantId')]",
+        "accessPolicies": [
+          {
+            "tenantId": "[reference(concat('Microsoft.Web/sites/', parameters('appServiceName')), '2016-08-01', 'Full').identity.tenantId]",
+            "objectId": "[reference(concat('Microsoft.Web/sites/', parameters('appServiceName')), '2016-08-01', 'Full').identity.principalId]",
+            "permissions": {
+              "secrets": [
+                "get",
+                "list"
+              ]
             }
-          ],
-          "sku": {
-            "name": "standard",
-            "family": "A"
+          },
+          {
+            "tenantId": "[parameters('tenantId')]",
+            "objectId": "[parameters('objectId')]",
+            "permissions": {
+              "certificates": [
+                "all"
+              ],
+              "keys": [
+                "all"
+              ],
+              "secrets": [
+                "all"
+              ]
+            }
           }
-        },
-        "dependsOn": [
-          "[resourceId('Microsoft.Web/sites', parameters('appServiceName'))]"
-        ]
-      }
-    ]
-  }
+        ],
+        "sku": {
+          "name": "standard",
+          "family": "A"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('appServiceName'))]"
+      ]
+    }
+  ]
+}

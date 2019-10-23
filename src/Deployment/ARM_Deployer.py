@@ -7,10 +7,10 @@ from azure.mgmt.resource.resources.models import DeploymentMode
 from azureml._base_sdk_common.common import fetch_tenantid_from_aad_token
 import os
 import sys
-import json
+import json, uuid
 
-from src.Common.Functions import load_json, psw_generator, write_to_config, get_object_id
-
+from src.Common.Functions import load_json, psw_generator, write_to_config, get_object_id, get_unique_resource_id
+from src.constants import CONFIG_PATH
 # ARM Deployment class that uses Template/Parameter files to deploy to a resource group in a given subscription
 
 
@@ -29,6 +29,7 @@ class ARM_Deployer(object):
         self.existing_resource_list: list = []
         self.create_resource_group()
         self.create_default_params()
+        self.config: dict = load_json(CONFIG_PATH)
 
 
     # Populates Parameters with default parameters found in Templates folder
@@ -88,6 +89,19 @@ class ARM_Deployer(object):
             key = key.lower()
             if 'password' in key:
                 parameters['password']['value'] = psw_generator()
+
+            # The following key values NEED to be unique and are therefore created here
+            # They must also be discoverable by the global config state
+            if key == 'appServiceName':
+                azfn_name = get_unique_resource_id('customsimazfn')
+                parameters[key]['value'] = azfn_name
+                self.config['azfn'] = azfn_name
+                write_to_config(self.config)
+            if key == 'keyVaultName':
+                keyvault_name = get_unique_resource_id('customsimkv')
+                parameters[key]['value'] = keyvault_name
+                self.config['keyvault'] = keyvault_name
+                write_to_config(self.config)
 
         return parameters
 
