@@ -1,5 +1,7 @@
 # Simulate Replay Data Devices from CSV files in Azure IoT Central
 
+# IOT-CENTRAL HAS BEEN REMOVED AND NO LONGER WORKS -- THEREFORE THIS WAS MADE PUBLIC AS IT WAS ALREADY A CUSTOM-SIMULATOR AND NOT IN ACTUAL USE
+
 ## Introduction
 This repository contains the necessary start-up code to simulate IoT Devices in [Azure IoT Central](https://azure.microsoft.com/en-us/services/iot-central/) from pre-defined csv files, and it comes pre-packaged with sample simulated Energy and Power devices to facilitate getting started.
 
